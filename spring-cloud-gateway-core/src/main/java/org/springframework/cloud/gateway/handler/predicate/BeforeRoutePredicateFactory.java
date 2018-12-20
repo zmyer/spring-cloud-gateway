@@ -24,8 +24,6 @@ import java.util.function.Predicate;
 
 import org.springframework.web.server.ServerWebExchange;
 
-import static org.springframework.cloud.gateway.handler.predicate.BetweenRoutePredicateFactory.getZonedDateTime;
-
 /**
  * @author Spencer Gibb
  */
@@ -44,7 +42,7 @@ public class BeforeRoutePredicateFactory extends AbstractRoutePredicateFactory<B
 
 	@Override
 	public Predicate<ServerWebExchange> apply(Config config) {
-		ZonedDateTime datetime = getZonedDateTime(config.getDatetime());
+		ZonedDateTime datetime = config.getDatetime();
 		return exchange -> {
 			final ZonedDateTime now = ZonedDateTime.now();
 			return now.isBefore(datetime);
@@ -52,13 +50,13 @@ public class BeforeRoutePredicateFactory extends AbstractRoutePredicateFactory<B
 	}
 
 	public static class Config {
-		private String datetime;
+		private ZonedDateTime datetime;
 
-		public String getDatetime() {
+		public ZonedDateTime getDatetime() {
 			return datetime;
 		}
 
-		public void setDatetime(String datetime) {
+		public void setDatetime(ZonedDateTime datetime) {
 			this.datetime = datetime;
 		}
 	}

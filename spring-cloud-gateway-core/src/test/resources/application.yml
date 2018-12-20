@@ -82,6 +82,26 @@ spring:
         - Host=**.forward.org
 
       # =====================================
+      - id: host_backwards_compatible_test
+        uri: ${test.uri}
+        predicates:
+          - name: Host
+            args:
+              pattern: '**.hostpatternarg.org'
+
+      # =====================================
+      - id: host_backwards_compatible_shortcut_test
+        uri: ${test.uri}
+        predicates:
+        - Host=**.hostpatternshortcut.org
+
+      # =====================================
+      - id: host_multi_test
+        uri: ${test.uri}
+        predicates:
+        - Host=**.hostmulti1.org,**.hostmulti2.org
+
+      # =====================================
       - id: hystrix_failure_test
         uri: ${test.uri}
         predicates:
@@ -163,6 +183,15 @@ spring:
         filters:
         - SetStatus=404
 
+        # =====================================
+      - id: path_multi
+        uri: ${test.uri}
+        predicates:
+          - Host=**.pathmulti.org
+          - Path=/anything/multi1{num},/anything/multi2{num}
+        filters:
+          - SetPath=/anything/multi{num}
+
       # =====================================
       - id: redirect_to_test
         uri: ${test.uri}
@@ -215,6 +244,14 @@ spring:
         - Path=/foo/{segment}
         filters:
         - SetPath=/{segment}
+
+        # =====================================
+      - id: set_path_host_test
+        uri: ${test.uri}
+        predicates:
+          - Host={subdomain}.setpathhost.org
+        filters:
+          - SetPath=/{subdomain}
 
       # =====================================
       - id: strip_prefix_test
@@ -314,6 +351,7 @@ logging:
     org.springframework.cloud.gateway: TRACE
     org.springframework.http.server.reactive: DEBUG
     org.springframework.web.reactive: DEBUG
+    org.springframework.boot.autoconfigure.web: DEBUG
     reactor.netty: DEBUG
     redisratelimiter: DEBUG
 

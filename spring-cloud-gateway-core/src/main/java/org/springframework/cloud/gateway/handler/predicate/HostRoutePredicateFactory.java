@@ -17,12 +17,17 @@
 
 package org.springframework.cloud.gateway.handler.predicate;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
+import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.core.style.ToStringCreator;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.PathMatcher;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.server.ServerWebExchange;
@@ -44,34 +49,63 @@ public class HostRoutePredicateFactory extends AbstractRoutePredicateFactory<Hos
 
 	@Override
 	public List<String> shortcutFieldOrder() {
-		return Collections.singletonList(PATTERN_KEY);
+		return Collections.singletonList("patterns");
+	}
+
+	@Override
+	public ShortcutType shortcutType() {
+		return ShortcutType.GATHER_LIST;
 	}
 
 	@Override
 	public Predicate<ServerWebExchange> apply(Config config) {
 		return exchange -> {
 			String host = exchange.getRequest().getHeaders().getFirst("Host");
-			return this.pathMatcher.match(config.getPattern(), host);
+			Optional<String> optionalPattern = config.getPatterns().stream()
+					.filter(pattern -> this.pathMatcher.match(pattern, host))
+					.findFirst();
+
+			if (optionalPattern.isPresent()) {
+				Map<String, String> variables = this.pathMatcher.extractUriTemplateVariables(optionalPattern.get(), host);
+				ServerWebExchangeUtils.putUriTemplateVariables(exchange, variables);
+				return true;
+			}
+
+			return false;
 		};
 	}
 
 	@Validated
 	public static class Config {
-		private String pattern;
+		private List<String> patterns = new ArrayList<>();
 
+		@Deprecated
 		public String getPattern() {
-			return pattern;
+			if (!CollectionUtils.isEmpty(this.patterns)) {
+				return patterns.get(0);
+			}
+			return null;
 		}
 
+		@Deprecated
 		public Config setPattern(String pattern) {
-			this.pattern = pattern;
+			this.patterns = new ArrayList<>();
+			this.patterns.add(pattern);
 			return this;
+		}
+
+		public List<String> getPatterns() {
+			return patterns;
+		}
+
+		public void setPatterns(List<String> patterns) {
+			this.patterns = patterns;
 		}
 
 		@Override
 		public String toString() {
 			return new ToStringCreator(this)
-					.append("pattern", pattern)
+					.append("patterns", patterns)
 					.toString();
 		}
 	}

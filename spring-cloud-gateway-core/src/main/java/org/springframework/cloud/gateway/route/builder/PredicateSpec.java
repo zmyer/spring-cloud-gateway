@@ -17,6 +17,8 @@
 package org.springframework.cloud.gateway.route.builder;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.function.Predicate;
 
 import org.springframework.cloud.gateway.handler.AsyncPredicate;
@@ -74,7 +76,7 @@ public class PredicateSpec extends UriSpec {
 	 */
 	public BooleanSpec after(ZonedDateTime datetime) {
 		return asyncPredicate(getBean(AfterRoutePredicateFactory.class)
-				.applyAsync(c-> c.setDatetime(datetime.toString())));
+				.applyAsync(c-> c.setDatetime(datetime)));
 	}
 
 	/**
@@ -83,7 +85,7 @@ public class PredicateSpec extends UriSpec {
 	 * @return a {@link BooleanSpec} to be used to add logical operators
 	 */
 	public BooleanSpec before(ZonedDateTime datetime) {
-		return asyncPredicate(getBean(BeforeRoutePredicateFactory.class).applyAsync(c -> c.setDatetime(datetime.toString())));
+		return asyncPredicate(getBean(BeforeRoutePredicateFactory.class).applyAsync(c -> c.setDatetime(datetime)));
 	}
 
 	/**
@@ -94,7 +96,7 @@ public class PredicateSpec extends UriSpec {
 	 */
 	public BooleanSpec between(ZonedDateTime datetime1, ZonedDateTime datetime2) {
 		return asyncPredicate(getBean(BetweenRoutePredicateFactory.class)
-				.applyAsync(c -> c.setDatetime1(datetime1.toString()).setDatetime2(datetime2.toString())));
+				.applyAsync(c -> c.setDatetime1(datetime1).setDatetime2(datetime2)));
 	}
 
 	/**
@@ -115,7 +117,7 @@ public class PredicateSpec extends UriSpec {
 	 */
 	public BooleanSpec header(String header) {
 		return asyncPredicate(getBean(HeaderRoutePredicateFactory.class)
-				.applyAsync(c -> c.setHeader(header))); //TODO: default regexp
+				.applyAsync(c -> c.setHeader(header)));
 	}
 
 	/**
@@ -134,9 +136,9 @@ public class PredicateSpec extends UriSpec {
 	 * @param pattern the pattern to check against.  The pattern is an Ant style pattern with {@code .} as a separator
 	 * @return a {@link BooleanSpec} to be used to add logical operators
 	 */
-	public BooleanSpec host(String pattern) {
+	public BooleanSpec host(String... pattern) {
 		return asyncPredicate(getBean(HostRoutePredicateFactory.class)
-				.applyAsync(c-> c.setPattern(pattern)));
+				.applyAsync(c-> c.setPatterns(Arrays.asList(pattern))));
 	}
 
 	/**
@@ -161,13 +163,13 @@ public class PredicateSpec extends UriSpec {
 
 	/**
 	 * A predicate that checks if the path of the request matches the given pattern
-	 * @param pattern the pattern to check the path against.
+	 * @param patterns the pattern to check the path against.
 	 *                The pattern is a {@link org.springframework.util.PathMatcher} pattern
 	 * @return a {@link BooleanSpec} to be used to add logical operators
 	 */
-	public BooleanSpec path(String pattern) {
+	public BooleanSpec path(String... patterns) {
 		return asyncPredicate(getBean(PathRoutePredicateFactory.class)
-				.applyAsync(c -> c.setPattern(pattern)));
+				.applyAsync(c -> c.setPatterns(Arrays.asList(patterns))));
 	}
 
 	/**
@@ -178,9 +180,25 @@ public class PredicateSpec extends UriSpec {
 	 *                                       when there is a trailing <code>/</code>
 	 * @return a {@link BooleanSpec} to be used to add logical operators
 	 */
+	@Deprecated
 	public BooleanSpec path(String pattern, boolean matchOptionalTrailingSeparator) {
 		return asyncPredicate(getBean(PathRoutePredicateFactory.class)
-				.applyAsync(c -> c.setPattern(pattern).setMatchOptionalTrailingSeparator(matchOptionalTrailingSeparator)));
+				.applyAsync(c -> c.setPatterns(Collections.singletonList(pattern))
+						.setMatchOptionalTrailingSeparator(matchOptionalTrailingSeparator)));
+	}
+
+	/**
+	 * A predicate that checks if the path of the request matches the given pattern
+	 * @param patterns the pattern to check the path against.
+	 *                The pattern is a {@link org.springframework.util.PathMatcher} pattern
+	 * @param matchOptionalTrailingSeparator set to false if you do not want this path to match
+	 *                                       when there is a trailing <code>/</code>
+	 * @return a {@link BooleanSpec} to be used to add logical operators
+	 */
+	public BooleanSpec path(boolean matchOptionalTrailingSeparator, String... patterns) {
+		return asyncPredicate(getBean(PathRoutePredicateFactory.class)
+				.applyAsync(c -> c.setPatterns(Arrays.asList(patterns))
+						.setMatchOptionalTrailingSeparator(matchOptionalTrailingSeparator)));
 	}
 
 	/**

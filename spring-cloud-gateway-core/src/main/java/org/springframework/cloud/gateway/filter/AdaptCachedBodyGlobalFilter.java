@@ -24,30 +24,31 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+// TODO: 2019/01/25 by zmyer
 public class AdaptCachedBodyGlobalFilter implements GlobalFilter, Ordered {
 
-	public static final String CACHED_REQUEST_BODY_KEY = "cachedRequestBody";
+    public static final String CACHED_REQUEST_BODY_KEY = "cachedRequestBody";
 
-	@Override
-	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
-		Flux<DataBuffer> body = exchange.getAttributeOrDefault(CACHED_REQUEST_BODY_KEY, null);
-		if (body != null) {
-			ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(exchange.getRequest()) {
-				@Override
-				public Flux<DataBuffer> getBody() {
-					return body;
-				}
-			};
-			exchange.getAttributes().remove(CACHED_REQUEST_BODY_KEY);
-			return chain.filter(exchange.mutate().request(decorator).build());
-		}
+        Flux<DataBuffer> body = exchange.getAttributeOrDefault(CACHED_REQUEST_BODY_KEY, null);
+        if (body != null) {
+            ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(exchange.getRequest()) {
+                @Override
+                public Flux<DataBuffer> getBody() {
+                    return body;
+                }
+            };
+            exchange.getAttributes().remove(CACHED_REQUEST_BODY_KEY);
+            return chain.filter(exchange.mutate().request(decorator).build());
+        }
 
-		return chain.filter(exchange);
-	}
+        return chain.filter(exchange);
+    }
 
-	@Override
-	public int getOrder() {
-		return Ordered.HIGHEST_PRECEDENCE + 1000;
-	}
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE + 1000;
+    }
 }

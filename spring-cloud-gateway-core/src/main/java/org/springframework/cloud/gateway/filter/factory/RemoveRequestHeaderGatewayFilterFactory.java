@@ -26,25 +26,27 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 /**
  * @author Spencer Gibb
  */
-public class RemoveRequestHeaderGatewayFilterFactory extends AbstractGatewayFilterFactory<AbstractGatewayFilterFactory.NameConfig> {
+// TODO: 2019/01/24 by zmyer
+public class RemoveRequestHeaderGatewayFilterFactory
+        extends AbstractGatewayFilterFactory<AbstractGatewayFilterFactory.NameConfig> {
 
-	public RemoveRequestHeaderGatewayFilterFactory() {
-		super(NameConfig.class);
-	}
+    public RemoveRequestHeaderGatewayFilterFactory() {
+        super(NameConfig.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(NAME_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(NAME_KEY);
+    }
 
-	@Override
-	public GatewayFilter apply(NameConfig config) {
-		return (exchange, chain) -> {
-			ServerHttpRequest request = exchange.getRequest().mutate()
-					.headers(httpHeaders -> httpHeaders.remove(config.getName()))
-					.build();
+    @Override
+    public GatewayFilter apply(NameConfig config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest().mutate()
+                    .headers(httpHeaders -> httpHeaders.remove(config.getName()))
+                    .build();
 
-			return chain.filter(exchange.mutate().request(request).build());
-		};
-	}
+            return chain.filter(exchange.mutate().request(request).build());
+        };
+    }
 }

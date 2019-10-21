@@ -17,7 +17,9 @@
 
 package org.springframework.cloud.gateway.support;
 
+// TODO: 2019/01/24 by zmyer
 public interface Configurable<C> {
-	Class<C> getConfigClass();
-	C newConfig();
+    Class<C> getConfigClass();
+
+    C newConfig();
 }

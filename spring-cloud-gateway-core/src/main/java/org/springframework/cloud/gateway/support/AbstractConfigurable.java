@@ -20,26 +20,27 @@ package org.springframework.cloud.gateway.support;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.style.ToStringCreator;
 
+// TODO: 2019/01/24 by zmyer
 public abstract class AbstractConfigurable<C> implements Configurable<C> {
-	private Class<C> configClass;
+    private Class<C> configClass;
 
-	protected AbstractConfigurable(Class<C> configClass) {
-		this.configClass = configClass;
-	}
+    protected AbstractConfigurable(Class<C> configClass) {
+        this.configClass = configClass;
+    }
 
-	public Class<C> getConfigClass() {
-		return configClass;
-	}
+    public Class<C> getConfigClass() {
+        return configClass;
+    }
 
-	@Override
-	public C newConfig() {
-		return BeanUtils.instantiateClass(this.configClass);
-	}
+    @Override
+    public C newConfig() {
+        return BeanUtils.instantiateClass(this.configClass);
+    }
 
-	@Override
-	public String toString() {
-		return new ToStringCreator(this)
-				.append("configClass", configClass)
-				.toString();
-	}
+    @Override
+    public String toString() {
+        return new ToStringCreator(this)
+                .append("configClass", configClass)
+                .toString();
+    }
 }

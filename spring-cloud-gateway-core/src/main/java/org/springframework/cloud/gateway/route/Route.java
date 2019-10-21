@@ -39,6 +39,7 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.t
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class Route implements Ordered {
 
 	private final String id;
@@ -73,7 +74,8 @@ public class Route implements Ordered {
 				.order(routeDefinition.getOrder());
 	}
 
-	private Route(String id, URI uri, int order, AsyncPredicate<ServerWebExchange> predicate, List<GatewayFilter> gatewayFilters) {
+	private Route(String id, URI uri, int order, AsyncPredicate<ServerWebExchange> predicate,
+				  List<GatewayFilter> gatewayFilters) {
 		this.id = id;
 		this.uri = uri;
 		this.order = order;
@@ -90,7 +92,8 @@ public class Route implements Ordered {
 
 		protected List<GatewayFilter> gatewayFilters = new ArrayList<>();
 
-		protected AbstractBuilder() {}
+		protected AbstractBuilder() {
+		}
 
 		protected abstract B getThis();
 
@@ -115,7 +118,8 @@ public class Route implements Ordered {
 		public B uri(URI uri) {
 			this.uri = uri;
 			String scheme = this.uri.getScheme();
-			Assert.hasText(scheme, "The parameter [" + this.uri + "] format is incorrect, scheme can not be empty");
+			Assert.hasText(scheme, "The parameter [" + this.uri + "] " +
+					"format is incorrect, scheme can not be empty");
 			if (this.uri.getPort() < 0 && scheme.startsWith("http")) {
 				// default known http ports
 				int port = this.uri.getScheme().equals("https") ? 443 : 80;
@@ -128,7 +132,6 @@ public class Route implements Ordered {
 		}
 
 		public abstract AsyncPredicate<ServerWebExchange> getPredicate();
-
 
 
 		public B replaceFilters(List<GatewayFilter> gatewayFilters) {
@@ -160,6 +163,7 @@ public class Route implements Ordered {
 		}
 	}
 
+	// TODO: 2019/01/25 by zmyer
 	public static class AsyncBuilder extends AbstractBuilder<AsyncBuilder> {
 
 		protected AsyncPredicate<ServerWebExchange> predicate;

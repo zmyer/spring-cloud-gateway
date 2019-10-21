@@ -21,104 +21,105 @@ import org.springframework.core.style.ToStringCreator;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.Assert;
 
+// TODO: 2019/01/24 by zmyer
 public class HttpStatusHolder {
 
-	private final HttpStatus httpStatus;
-	private final Integer status;
+    private final HttpStatus httpStatus;
+    private final Integer status;
 
-	public static HttpStatusHolder parse(String status) {
-		final HttpStatus httpStatus = ServerWebExchangeUtils.parse(status);
-		final Integer intStatus;
-		if (httpStatus == null) {
-			intStatus = Integer.parseInt(status);
-		} else {
-			intStatus = null;
-		}
+    public static HttpStatusHolder parse(String status) {
+        final HttpStatus httpStatus = ServerWebExchangeUtils.parse(status);
+        final Integer intStatus;
+        if (httpStatus == null) {
+            intStatus = Integer.parseInt(status);
+        } else {
+            intStatus = null;
+        }
 
-		return new HttpStatusHolder(httpStatus, intStatus);
-	}
+        return new HttpStatusHolder(httpStatus, intStatus);
+    }
 
-	public HttpStatusHolder(HttpStatus httpStatus, Integer status) {
-		Assert.isTrue(httpStatus != null || status != null,
-				"httpStatus and status may not both be null");
-		this.httpStatus = httpStatus;
-		this.status = status;
-	}
+    public HttpStatusHolder(HttpStatus httpStatus, Integer status) {
+        Assert.isTrue(httpStatus != null || status != null,
+                "httpStatus and status may not both be null");
+        this.httpStatus = httpStatus;
+        this.status = status;
+    }
 
-	public HttpStatus getHttpStatus() {
-		return httpStatus;
-	}
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
+    }
 
-	public Integer getStatus() {
-		return status;
-	}
+    public Integer getStatus() {
+        return status;
+    }
 
-	/**
-	 * Whether this status code is in the HTTP series
-	 * {@link org.springframework.http.HttpStatus.Series#INFORMATIONAL}.
-	 */
-	public boolean is1xxInformational() {
-		return HttpStatus.Series.INFORMATIONAL.equals(getSeries());
-	}
+    /**
+     * Whether this status code is in the HTTP series
+     * {@link org.springframework.http.HttpStatus.Series#INFORMATIONAL}.
+     */
+    public boolean is1xxInformational() {
+        return HttpStatus.Series.INFORMATIONAL.equals(getSeries());
+    }
 
-	/**
-	 * Whether this status code is in the HTTP series
-	 * {@link org.springframework.http.HttpStatus.Series#SUCCESSFUL}.
-	 */
-	public boolean is2xxSuccessful() {
-		return HttpStatus.Series.SUCCESSFUL.equals(getSeries());
-	}
+    /**
+     * Whether this status code is in the HTTP series
+     * {@link org.springframework.http.HttpStatus.Series#SUCCESSFUL}.
+     */
+    public boolean is2xxSuccessful() {
+        return HttpStatus.Series.SUCCESSFUL.equals(getSeries());
+    }
 
-	/**
-	 * Whether this status code is in the HTTP series
-	 * {@link org.springframework.http.HttpStatus.Series#REDIRECTION}.
-	 */
-	public boolean is3xxRedirection() {
-		return HttpStatus.Series.REDIRECTION.equals(getSeries());
-	}
-
-
-	/**
-	 * Whether this status code is in the HTTP series
-	 * {@link org.springframework.http.HttpStatus.Series#CLIENT_ERROR}.
-	 */
-	public boolean is4xxClientError() {
-		return HttpStatus.Series.CLIENT_ERROR.equals(getSeries());
-	}
-
-	/**
-	 * Whether this status code is in the HTTP series
-	 * {@link org.springframework.http.HttpStatus.Series#SERVER_ERROR}.
-	 */
-	public boolean is5xxServerError() {
-		return HttpStatus.Series.SERVER_ERROR.equals(getSeries());
-	}
-
-	public HttpStatus.Series getSeries() {
-		if (httpStatus != null) {
-			return httpStatus.series();
-		}
-		if (status != null) {
-			return HttpStatus.Series.valueOf(status);
-		}
-		return null;
-	}
+    /**
+     * Whether this status code is in the HTTP series
+     * {@link org.springframework.http.HttpStatus.Series#REDIRECTION}.
+     */
+    public boolean is3xxRedirection() {
+        return HttpStatus.Series.REDIRECTION.equals(getSeries());
+    }
 
 
-	/**
-	 * Whether this status code is in the HTTP series
-	 * {@link org.springframework.http.HttpStatus.Series#CLIENT_ERROR} or
-	 * {@link org.springframework.http.HttpStatus.Series#SERVER_ERROR}.
-	 */
-	public boolean isError() {
-		return is4xxClientError() || is5xxServerError();
-	}
+    /**
+     * Whether this status code is in the HTTP series
+     * {@link org.springframework.http.HttpStatus.Series#CLIENT_ERROR}.
+     */
+    public boolean is4xxClientError() {
+        return HttpStatus.Series.CLIENT_ERROR.equals(getSeries());
+    }
 
-	@Override
-	public String toString() {
-		return new ToStringCreator(this)
-				.append("httpStatus", httpStatus)
-				.append("status", status)
-				.toString();
-	}
+    /**
+     * Whether this status code is in the HTTP series
+     * {@link org.springframework.http.HttpStatus.Series#SERVER_ERROR}.
+     */
+    public boolean is5xxServerError() {
+        return HttpStatus.Series.SERVER_ERROR.equals(getSeries());
+    }
+
+    public HttpStatus.Series getSeries() {
+        if (httpStatus != null) {
+            return httpStatus.series();
+        }
+        if (status != null) {
+            return HttpStatus.Series.valueOf(status);
+        }
+        return null;
+    }
+
+
+    /**
+     * Whether this status code is in the HTTP series
+     * {@link org.springframework.http.HttpStatus.Series#CLIENT_ERROR} or
+     * {@link org.springframework.http.HttpStatus.Series#SERVER_ERROR}.
+     */
+    public boolean isError() {
+        return is4xxClientError() || is5xxServerError();
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringCreator(this)
+                .append("httpStatus", httpStatus)
+                .append("status", status)
+                .toString();
+    }
 }

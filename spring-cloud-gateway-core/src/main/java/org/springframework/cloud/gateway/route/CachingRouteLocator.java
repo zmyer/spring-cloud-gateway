@@ -31,39 +31,41 @@ import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 public class CachingRouteLocator implements RouteLocator, ApplicationListener<RefreshRoutesEvent> {
 
-	private final RouteLocator delegate;
-	private final Flux<Route> routes;
-	private final Map<String, List> cache = new HashMap<>();
+    private final RouteLocator delegate;
+    private final Flux<Route> routes;
+    private final Map<String, List> cache = new HashMap<>();
 
-	public CachingRouteLocator(RouteLocator delegate) {
-		this.delegate = delegate;
-		routes = CacheFlux.lookup(cache, "routes", Route.class)
-				.onCacheMissResume(() -> this.delegate.getRoutes().sort(AnnotationAwareOrderComparator.INSTANCE));
-	}
+    public CachingRouteLocator(RouteLocator delegate) {
+        this.delegate = delegate;
+        routes = CacheFlux.lookup(cache, "routes", Route.class)
+                .onCacheMissResume(() -> this.delegate.getRoutes().sort(AnnotationAwareOrderComparator.INSTANCE));
+    }
 
-	@Override
-	public Flux<Route> getRoutes() {
-		return this.routes;
-	}
+    @Override
+    public Flux<Route> getRoutes() {
+        return this.routes;
+    }
 
-	/**
-	 * Clears the routes cache
-	 * @return routes flux
-	 */
-	public Flux<Route> refresh() {
-		this.cache.clear();
-		return this.routes;
-	}
+    /**
+     * Clears the routes cache
+     *
+     * @return routes flux
+     */
+    public Flux<Route> refresh() {
+        this.cache.clear();
+        return this.routes;
+    }
 
-	@Override
-	public void onApplicationEvent(RefreshRoutesEvent event) {
-		refresh();
-	}
+    @Override
+    public void onApplicationEvent(RefreshRoutesEvent event) {
+        refresh();
+    }
 
-	@Deprecated
-	/* for testing */ void handleRefresh() {
-		refresh();
-	}
+    @Deprecated
+        /* for testing */ void handleRefresh() {
+        refresh();
+    }
 }

@@ -23,35 +23,38 @@ import java.net.URI;
 /**
  * A specification to add a URI to a route.
  */
+// TODO: 2019/01/24 by zmyer
 public class UriSpec {
-	final Route.AsyncBuilder routeBuilder;
-	final RouteLocatorBuilder.Builder builder;
+    final Route.AsyncBuilder routeBuilder;
+    final RouteLocatorBuilder.Builder builder;
 
-	UriSpec(Route.AsyncBuilder routeBuilder, RouteLocatorBuilder.Builder builder) {
-		this.routeBuilder = routeBuilder;
-		this.builder = builder;
-	}
+    UriSpec(Route.AsyncBuilder routeBuilder, RouteLocatorBuilder.Builder builder) {
+        this.routeBuilder = routeBuilder;
+        this.builder = builder;
+    }
 
-	/**
-	 * Set the URI for the route.
-	 * @param uri the URI for the route
-	 * @return a {@link Route.AsyncBuilder}
-	 */
-	public Route.AsyncBuilder uri(String uri) {
-		return this.routeBuilder.uri(uri);
-	}
+    /**
+     * Set the URI for the route.
+     *
+     * @param uri the URI for the route
+     * @return a {@link Route.AsyncBuilder}
+     */
+    public Route.AsyncBuilder uri(String uri) {
+        return this.routeBuilder.uri(uri);
+    }
 
-	/**
-	 * Set the URI for the route.
-	 * @param uri the URI for the route.
-	 * @return a {@link Route.AsyncBuilder}
-	 */
-	public Route.AsyncBuilder uri(URI uri) {
-		return this.routeBuilder.uri(uri);
-	}
+    /**
+     * Set the URI for the route.
+     *
+     * @param uri the URI for the route.
+     * @return a {@link Route.AsyncBuilder}
+     */
+    public Route.AsyncBuilder uri(URI uri) {
+        return this.routeBuilder.uri(uri);
+    }
 
 
-	<T> T getBean(Class<T> type) {
-		return this.builder.getContext().getBean(type);
-	}
+    <T> T getBean(Class<T> type) {
+        return this.builder.getContext().getBean(type);
+    }
 }

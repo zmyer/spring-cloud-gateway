@@ -19,7 +19,8 @@ package org.springframework.cloud.gateway.support;
 
 import java.util.Map;
 
+// TODO: 2019/01/24 by zmyer
 public interface StatefulConfigurable<C> extends Configurable<C> {
 
-	Map<String, C> getConfig();
+    Map<String, C> getConfig();
 }

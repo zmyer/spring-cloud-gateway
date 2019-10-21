@@ -38,150 +38,152 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 /**
  * This filter is BETA and may be subject to change in a future release.
  */
+// TODO: 2019/01/24 by zmyer
 public class ModifyRequestBodyGatewayFilterFactory
-		extends AbstractGatewayFilterFactory<ModifyRequestBodyGatewayFilterFactory.Config> {
+        extends AbstractGatewayFilterFactory<ModifyRequestBodyGatewayFilterFactory.Config> {
 
-	public ModifyRequestBodyGatewayFilterFactory() {
-		super(Config.class);
-	}
+    public ModifyRequestBodyGatewayFilterFactory() {
+        super(Config.class);
+    }
 
-	@Deprecated
-	public ModifyRequestBodyGatewayFilterFactory(ServerCodecConfigurer codecConfigurer) {
-		this();
-	}
+    @Deprecated
+    public ModifyRequestBodyGatewayFilterFactory(ServerCodecConfigurer codecConfigurer) {
+        this();
+    }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public GatewayFilter apply(Config config) {
-		return (exchange, chain) -> {
-			Class inClass = config.getInClass();
+    @Override
+    @SuppressWarnings("unchecked")
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            Class inClass = config.getInClass();
 
-			ServerRequest serverRequest = new DefaultServerRequest(exchange);
-			//TODO: flux or mono
-			Mono<?> modifiedBody = serverRequest.bodyToMono(inClass)
-					// .log("modify_request_mono", Level.INFO)
-					.flatMap(o -> config.rewriteFunction.apply(exchange, o));
+            ServerRequest serverRequest = new DefaultServerRequest(exchange);
+            //TODO: flux or mono
+            Mono<?> modifiedBody = serverRequest.bodyToMono(inClass)
+                    // .log("modify_request_mono", Level.INFO)
+                    .flatMap(o -> config.rewriteFunction.apply(exchange, o));
 
-			BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, config.getOutClass());
-			HttpHeaders headers = new HttpHeaders();
-			headers.putAll(exchange.getRequest().getHeaders());
+            BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, config.getOutClass());
+            HttpHeaders headers = new HttpHeaders();
+            headers.putAll(exchange.getRequest().getHeaders());
 
-			// the new content type will be computed by bodyInserter
-			// and then set in the request decorator
-			headers.remove(HttpHeaders.CONTENT_LENGTH);
+            // the new content type will be computed by bodyInserter
+            // and then set in the request decorator
+            headers.remove(HttpHeaders.CONTENT_LENGTH);
 
-			// if the body is changing content types, set it here, to the bodyInserter will know about it
-			if (config.getContentType() != null) {
-				headers.set(HttpHeaders.CONTENT_TYPE, config.getContentType());
-			}
-			CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, headers);
-			return bodyInserter.insert(outputMessage,  new BodyInserterContext())
-					// .log("modify_request", Level.INFO)
-					.then(Mono.defer(() -> {
-						ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(
-								exchange.getRequest()) {
-							@Override
-							public HttpHeaders getHeaders() {
-								long contentLength = headers.getContentLength();
-								HttpHeaders httpHeaders = new HttpHeaders();
-								httpHeaders.putAll(super.getHeaders());
-								if (contentLength > 0) {
-									httpHeaders.setContentLength(contentLength);
-								} else {
-									// TODO: this causes a 'HTTP/1.1 411 Length Required' on httpbin.org
-									httpHeaders.set(HttpHeaders.TRANSFER_ENCODING, "chunked");
-								}
-								return httpHeaders;
-							}
+            // if the body is changing content types, set it here, to the bodyInserter will know about it
+            if (config.getContentType() != null) {
+                headers.set(HttpHeaders.CONTENT_TYPE, config.getContentType());
+            }
+            CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, headers);
+            return bodyInserter.insert(outputMessage, new BodyInserterContext())
+                    // .log("modify_request", Level.INFO)
+                    .then(Mono.defer(() -> {
+                        ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(
+                                exchange.getRequest()) {
+                            @Override
+                            public HttpHeaders getHeaders() {
+                                long contentLength = headers.getContentLength();
+                                HttpHeaders httpHeaders = new HttpHeaders();
+                                httpHeaders.putAll(super.getHeaders());
+                                if (contentLength > 0) {
+                                    httpHeaders.setContentLength(contentLength);
+                                } else {
+                                    // TODO: this causes a 'HTTP/1.1 411 Length Required' on httpbin.org
+                                    httpHeaders.set(HttpHeaders.TRANSFER_ENCODING, "chunked");
+                                }
+                                return httpHeaders;
+                            }
 
-							@Override
-							public Flux<DataBuffer> getBody() {
-								return outputMessage.getBody();
-							}
-						};
-						return chain.filter(exchange.mutate().request(decorator).build());
-					}));
+                            @Override
+                            public Flux<DataBuffer> getBody() {
+                                return outputMessage.getBody();
+                            }
+                        };
+                        return chain.filter(exchange.mutate().request(decorator).build());
+                    }));
 
-		};
-	}
+        };
+    }
 
-	public static class Config {
-		private Class inClass;
-		private Class outClass;
+    // TODO: 2019/01/24 by zmyer
+    public static class Config {
+        private Class inClass;
+        private Class outClass;
 
-		private String contentType;
+        private String contentType;
 
-		@Deprecated
-		private Map<String, Object> inHints;
-		@Deprecated
-		private Map<String, Object> outHints;
+        @Deprecated
+        private Map<String, Object> inHints;
+        @Deprecated
+        private Map<String, Object> outHints;
 
-		private RewriteFunction rewriteFunction;
+        private RewriteFunction rewriteFunction;
 
-		public Class getInClass() {
-			return inClass;
-		}
+        public Class getInClass() {
+            return inClass;
+        }
 
-		public Config setInClass(Class inClass) {
-			this.inClass = inClass;
-			return this;
-		}
+        public Config setInClass(Class inClass) {
+            this.inClass = inClass;
+            return this;
+        }
 
-		public Class getOutClass() {
-			return outClass;
-		}
+        public Class getOutClass() {
+            return outClass;
+        }
 
-		public Config setOutClass(Class outClass) {
-			this.outClass = outClass;
-			return this;
-		}
+        public Config setOutClass(Class outClass) {
+            this.outClass = outClass;
+            return this;
+        }
 
-		@Deprecated
-		public Map<String, Object> getInHints() {
-			return inHints;
-		}
+        @Deprecated
+        public Map<String, Object> getInHints() {
+            return inHints;
+        }
 
-		@Deprecated
-		public Config setInHints(Map<String, Object> inHints) {
-			this.inHints = inHints;
-			return this;
-		}
+        @Deprecated
+        public Config setInHints(Map<String, Object> inHints) {
+            this.inHints = inHints;
+            return this;
+        }
 
-		@Deprecated
-		public Map<String, Object> getOutHints() {
-			return outHints;
-		}
+        @Deprecated
+        public Map<String, Object> getOutHints() {
+            return outHints;
+        }
 
-		@Deprecated
-		public Config setOutHints(Map<String, Object> outHints) {
-			this.outHints = outHints;
-			return this;
-		}
+        @Deprecated
+        public Config setOutHints(Map<String, Object> outHints) {
+            this.outHints = outHints;
+            return this;
+        }
 
-		public RewriteFunction getRewriteFunction() {
-			return rewriteFunction;
-		}
+        public RewriteFunction getRewriteFunction() {
+            return rewriteFunction;
+        }
 
-		public <T, R> Config setRewriteFunction(Class<T> inClass, Class<R> outClass,
-												RewriteFunction<T, R> rewriteFunction) {
-			setInClass(inClass);
-			setOutClass(outClass);
-			setRewriteFunction(rewriteFunction);
-			return this;
-		}
+        public <T, R> Config setRewriteFunction(Class<T> inClass, Class<R> outClass,
+                                                RewriteFunction<T, R> rewriteFunction) {
+            setInClass(inClass);
+            setOutClass(outClass);
+            setRewriteFunction(rewriteFunction);
+            return this;
+        }
 
-		public Config setRewriteFunction(RewriteFunction rewriteFunction) {
-			this.rewriteFunction = rewriteFunction;
-			return this;
-		}
+        public Config setRewriteFunction(RewriteFunction rewriteFunction) {
+            this.rewriteFunction = rewriteFunction;
+            return this;
+        }
 
-		public String getContentType() {
-			return contentType;
-		}
+        public String getContentType() {
+            return contentType;
+        }
 
-		public Config setContentType(String contentType) {
-			this.contentType = contentType;
-			return this;
-		}
-	}
+        public Config setContentType(String contentType) {
+            this.contentType = contentType;
+            return this;
+        }
+    }
 }

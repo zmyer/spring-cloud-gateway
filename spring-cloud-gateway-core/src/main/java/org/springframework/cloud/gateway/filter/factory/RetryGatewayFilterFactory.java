@@ -41,90 +41,91 @@ import org.springframework.http.HttpStatus.Series;
 import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
 
+// TODO: 2019/01/24 by zmyer
 public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<RetryGatewayFilterFactory.RetryConfig> {
 
-	public static final String RETRY_ITERATION_KEY = "retry_iteration";
-	private static final Log log = LogFactory.getLog(RetryGatewayFilterFactory.class);
+    public static final String RETRY_ITERATION_KEY = "retry_iteration";
+    private static final Log log = LogFactory.getLog(RetryGatewayFilterFactory.class);
 
-	public RetryGatewayFilterFactory() {
-		super(RetryConfig.class);
-	}
+    public RetryGatewayFilterFactory() {
+        super(RetryConfig.class);
+    }
 
-	@Override
-	public GatewayFilter apply(RetryConfig retryConfig) {
-		retryConfig.validate();
+    @Override
+    public GatewayFilter apply(RetryConfig retryConfig) {
+        retryConfig.validate();
 
-		Repeat<ServerWebExchange> statusCodeRepeat = null;
-		if (!retryConfig.getStatuses().isEmpty() || !retryConfig.getSeries().isEmpty()) {
-			Predicate<RepeatContext<ServerWebExchange>> repeatPredicate = context -> {
-				ServerWebExchange exchange = context.applicationContext();
-				if (exceedsMaxIterations(exchange, retryConfig)) {
-					return false;
-				}
+        Repeat<ServerWebExchange> statusCodeRepeat = null;
+        if (!retryConfig.getStatuses().isEmpty() || !retryConfig.getSeries().isEmpty()) {
+            Predicate<RepeatContext<ServerWebExchange>> repeatPredicate = context -> {
+                ServerWebExchange exchange = context.applicationContext();
+                if (exceedsMaxIterations(exchange, retryConfig)) {
+                    return false;
+                }
 
-				HttpStatus statusCode = exchange.getResponse().getStatusCode();
-				HttpMethod httpMethod = exchange.getRequest().getMethod();
+                HttpStatus statusCode = exchange.getResponse().getStatusCode();
+                HttpMethod httpMethod = exchange.getRequest().getMethod();
 
-				boolean retryableStatusCode = retryConfig.getStatuses().contains(statusCode);
+                boolean retryableStatusCode = retryConfig.getStatuses().contains(statusCode);
 
-				if (!retryableStatusCode && statusCode != null) { // null status code might mean a network exception?
-					// try the series
-					retryableStatusCode = retryConfig.getSeries().stream()
-							.anyMatch(series -> statusCode.series().equals(series));
-				}
+                if (!retryableStatusCode && statusCode != null) { // null status code might mean a network exception?
+                    // try the series
+                    retryableStatusCode = retryConfig.getSeries().stream()
+                            .anyMatch(series -> statusCode.series().equals(series));
+                }
 
-				boolean retryableMethod = retryConfig.getMethods().contains(httpMethod);
-				return retryableMethod && retryableStatusCode;
-			};
+                boolean retryableMethod = retryConfig.getMethods().contains(httpMethod);
+                return retryableMethod && retryableStatusCode;
+            };
 
-			statusCodeRepeat = Repeat.onlyIf(repeatPredicate)
-					.doOnRepeat(context -> reset(context.applicationContext()));
-		}
+            statusCodeRepeat = Repeat.onlyIf(repeatPredicate)
+                    .doOnRepeat(context -> reset(context.applicationContext()));
+        }
 
-		//TODO: support timeout, backoff, jitter, etc... in Builder
+        //TODO: support timeout, backoff, jitter, etc... in Builder
 
-		Retry<ServerWebExchange> exceptionRetry = null;
-		if (!retryConfig.getExceptions().isEmpty()) {
-			Predicate<RetryContext<ServerWebExchange>> retryContextPredicate = context -> {
-				if (exceedsMaxIterations(context.applicationContext(), retryConfig)) {
-					return false;
-				}
+        Retry<ServerWebExchange> exceptionRetry = null;
+        if (!retryConfig.getExceptions().isEmpty()) {
+            Predicate<RetryContext<ServerWebExchange>> retryContextPredicate = context -> {
+                if (exceedsMaxIterations(context.applicationContext(), retryConfig)) {
+                    return false;
+                }
 
-				for (Class<? extends Throwable> clazz : retryConfig.getExceptions()) {
-					if (clazz.isInstance(context.exception())) {
-						return true;
-					}
-				}
-				return false;
-			};
-			exceptionRetry = Retry.onlyIf(retryContextPredicate)
-					.doOnRetry(context -> reset(context.applicationContext()))
-					.retryMax(retryConfig.getRetries());
-		}
+                for (Class<? extends Throwable> clazz : retryConfig.getExceptions()) {
+                    if (clazz.isInstance(context.exception())) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            exceptionRetry = Retry.onlyIf(retryContextPredicate)
+                    .doOnRetry(context -> reset(context.applicationContext()))
+                    .retryMax(retryConfig.getRetries());
+        }
 
 
-		return apply(statusCodeRepeat, exceptionRetry);
-	}
+        return apply(statusCodeRepeat, exceptionRetry);
+    }
 
-	public boolean exceedsMaxIterations(ServerWebExchange exchange, RetryConfig retryConfig) {
-		Integer iteration = exchange.getAttribute(RETRY_ITERATION_KEY);
+    public boolean exceedsMaxIterations(ServerWebExchange exchange, RetryConfig retryConfig) {
+        Integer iteration = exchange.getAttribute(RETRY_ITERATION_KEY);
 
-		//TODO: deal with null iteration
-		return iteration != null && iteration >= retryConfig.getRetries();
-	}
+        //TODO: deal with null iteration
+        return iteration != null && iteration >= retryConfig.getRetries();
+    }
 
-	public void reset(ServerWebExchange exchange) {
-		//TODO: what else to do to reset SWE?
-		exchange.getAttributes().remove(ServerWebExchangeUtils.GATEWAY_ALREADY_ROUTED_ATTR);
-	}
+    public void reset(ServerWebExchange exchange) {
+        //TODO: what else to do to reset SWE?
+        exchange.getAttributes().remove(ServerWebExchangeUtils.GATEWAY_ALREADY_ROUTED_ATTR);
+    }
 
-	public GatewayFilter apply(Repeat<ServerWebExchange> repeat, Retry<ServerWebExchange> retry) {
-		return (exchange, chain) -> {
-			if (log.isTraceEnabled()) {
-				log.trace("Entering retry-filter");
-			}
+    public GatewayFilter apply(Repeat<ServerWebExchange> repeat, Retry<ServerWebExchange> retry) {
+        return (exchange, chain) -> {
+            if (log.isTraceEnabled()) {
+                log.trace("Entering retry-filter");
+            }
 
-			// chain.filter returns a Mono<Void>
+            // chain.filter returns a Mono<Void>
             Publisher<Void> publisher = chain.filter(exchange)
                     //.log("retry-filter", Level.INFO)
                     .doOnSuccessOrError((aVoid, throwable) -> {
@@ -133,91 +134,91 @@ public class RetryGatewayFilterFactory extends AbstractGatewayFilterFactory<Retr
                     });
 
             if (retry != null) {
-				// retryWhen returns a Mono<Void>
-				// retry needs to go before repeat
-				publisher = ((Mono<Void>)publisher).retryWhen(retry.withApplicationContext(exchange));
-			}
-			if (repeat != null) {
-            	// repeatWhen returns a Flux<Void>
-				// so this needs to be last and the variable a Publisher<Void>
-				publisher = ((Mono<Void>)publisher).repeatWhen(repeat.withApplicationContext(exchange));
-			}
+                // retryWhen returns a Mono<Void>
+                // retry needs to go before repeat
+                publisher = ((Mono<Void>) publisher).retryWhen(retry.withApplicationContext(exchange));
+            }
+            if (repeat != null) {
+                // repeatWhen returns a Flux<Void>
+                // so this needs to be last and the variable a Publisher<Void>
+                publisher = ((Mono<Void>) publisher).repeatWhen(repeat.withApplicationContext(exchange));
+            }
 
             return Mono.fromDirect(publisher);
-		};
-	}
+        };
+    }
 
-	private static <T> List<T> toList(T... items) {
-		return new ArrayList<>(Arrays.asList(items));
-	}
+    private static <T> List<T> toList(T... items) {
+        return new ArrayList<>(Arrays.asList(items));
+    }
 
-	@SuppressWarnings("unchecked")
-	public static class RetryConfig {
-		private int retries = 3;
-		
-		private List<Series> series = toList(Series.SERVER_ERROR);
-		
-		private List<HttpStatus> statuses = new ArrayList<>();
-		
-		private List<HttpMethod> methods = toList(HttpMethod.GET);
+    @SuppressWarnings("unchecked")
+    public static class RetryConfig {
+        private int retries = 3;
 
-		private List<Class<? extends Throwable>> exceptions = toList(IOException.class, TimeoutException.class);
+        private List<Series> series = toList(Series.SERVER_ERROR);
 
-		public RetryConfig setRetries(int retries) {
-			this.retries = retries;
-			return this;
-		}
-		
-		public RetryConfig setSeries(Series... series) {
-			this.series = Arrays.asList(series);
-			return this;
-		}
-		
-		public RetryConfig setStatuses(HttpStatus... statuses) {
-			this.statuses = Arrays.asList(statuses);
-			return this;
-		}
-		
-		public RetryConfig setMethods(HttpMethod... methods) {
-			this.methods = Arrays.asList(methods);
-			return this;
-		}
+        private List<HttpStatus> statuses = new ArrayList<>();
 
-		public RetryConfig allMethods() {
-			return setMethods(HttpMethod.values());
-		}
+        private List<HttpMethod> methods = toList(HttpMethod.GET);
 
-		public RetryConfig setExceptions(Class<? extends Throwable>... exceptions) {
-			this.exceptions = Arrays.asList(exceptions);
-			return this;
-		}
+        private List<Class<? extends Throwable>> exceptions = toList(IOException.class, TimeoutException.class);
 
-		public void validate() {
-			Assert.isTrue(this.retries > 0, "retries must be greater than 0");
-			Assert.isTrue(!this.series.isEmpty() || !this.statuses.isEmpty() || !this.exceptions.isEmpty(),
-					"series, status and exceptions may not all be empty");
-			Assert.notEmpty(this.methods, "methods may not be empty");
-		}
+        public RetryConfig setRetries(int retries) {
+            this.retries = retries;
+            return this;
+        }
 
-		public int getRetries() {
-			return retries;
-		}
+        public RetryConfig setSeries(Series... series) {
+            this.series = Arrays.asList(series);
+            return this;
+        }
 
-		public List<Series> getSeries() {
-			return series;
-		}
+        public RetryConfig setStatuses(HttpStatus... statuses) {
+            this.statuses = Arrays.asList(statuses);
+            return this;
+        }
 
-		public List<HttpStatus> getStatuses() {
-			return statuses;
-		}
+        public RetryConfig setMethods(HttpMethod... methods) {
+            this.methods = Arrays.asList(methods);
+            return this;
+        }
 
-		public List<HttpMethod> getMethods() {
-			return methods;
-		}
+        public RetryConfig allMethods() {
+            return setMethods(HttpMethod.values());
+        }
 
-		public List<Class<? extends Throwable>> getExceptions() {
-			return exceptions;
-		}
+        public RetryConfig setExceptions(Class<? extends Throwable>... exceptions) {
+            this.exceptions = Arrays.asList(exceptions);
+            return this;
+        }
 
-	}
+        public void validate() {
+            Assert.isTrue(this.retries > 0, "retries must be greater than 0");
+            Assert.isTrue(!this.series.isEmpty() || !this.statuses.isEmpty() || !this.exceptions.isEmpty(),
+                    "series, status and exceptions may not all be empty");
+            Assert.notEmpty(this.methods, "methods may not be empty");
+        }
+
+        public int getRetries() {
+            return retries;
+        }
+
+        public List<Series> getSeries() {
+            return series;
+        }
+
+        public List<HttpStatus> getStatuses() {
+            return statuses;
+        }
+
+        public List<HttpMethod> getMethods() {
+            return methods;
+        }
+
+        public List<Class<? extends Throwable>> getExceptions() {
+            return exceptions;
+        }
+
+    }
 }

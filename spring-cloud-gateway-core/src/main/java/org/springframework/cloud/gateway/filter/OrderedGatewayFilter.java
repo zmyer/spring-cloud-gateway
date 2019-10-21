@@ -25,36 +25,37 @@ import reactor.core.publisher.Mono;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class OrderedGatewayFilter implements GatewayFilter, Ordered {
 
-	private final GatewayFilter delegate;
-	private final int order;
+    private final GatewayFilter delegate;
+    private final int order;
 
-	public OrderedGatewayFilter(GatewayFilter delegate, int order) {
-		this.delegate = delegate;
-		this.order = order;
-	}
+    public OrderedGatewayFilter(GatewayFilter delegate, int order) {
+        this.delegate = delegate;
+        this.order = order;
+    }
 
-	public GatewayFilter getDelegate() {
-		return delegate;
-	}
+    public GatewayFilter getDelegate() {
+        return delegate;
+    }
 
-	@Override
-	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-		return this.delegate.filter(exchange, chain);
-	}
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        return this.delegate.filter(exchange, chain);
+    }
 
-	@Override
-	public int getOrder() {
-		return this.order;
-	}
+    @Override
+    public int getOrder() {
+        return this.order;
+    }
 
-	@Override
-	public String toString() {
-		final StringBuilder sb = new StringBuilder("OrderedGatewayFilter{");
-		sb.append("delegate=").append(delegate);
-		sb.append(", order=").append(order);
-		sb.append('}');
-		return sb.toString();
-	}
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("OrderedGatewayFilter{");
+        sb.append("delegate=").append(delegate);
+        sb.append(", order=").append(order);
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -18,6 +18,7 @@
 package org.springframework.cloud.gateway.route;
 
 import javax.validation.constraints.NotEmpty;
+
 import org.springframework.cloud.gateway.filter.FilterDefinition;
 import org.springframework.cloud.gateway.handler.predicate.PredicateDefinition;
 import org.springframework.validation.annotation.Validated;
@@ -36,6 +37,7 @@ import static org.springframework.util.StringUtils.tokenizeToStringArray;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 @Validated
 public class RouteDefinition {
 	@NotEmpty
@@ -53,7 +55,8 @@ public class RouteDefinition {
 
 	private int order = 0;
 
-	public RouteDefinition() {}
+	public RouteDefinition() {
+	}
 
 	public RouteDefinition(String text) {
 		int eqIdx = text.indexOf('=');
@@ -64,11 +67,11 @@ public class RouteDefinition {
 
 		setId(text.substring(0, eqIdx));
 
-		String[] args = tokenizeToStringArray(text.substring(eqIdx+1), ",");
+		String[] args = tokenizeToStringArray(text.substring(eqIdx + 1), ",");
 
 		setUri(URI.create(args[0]));
 
-		for (int i=1; i < args.length; i++) {
+		for (int i = 1; i < args.length; i++) {
 			this.predicates.add(new PredicateDefinition(args[i]));
 		}
 	}

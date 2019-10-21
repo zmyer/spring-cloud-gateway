@@ -24,16 +24,18 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.P
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class PreserveHostHeaderGatewayFilterFactory extends AbstractGatewayFilterFactory {
 
-	public GatewayFilter apply() {
-		return apply(o -> {});
-	}
+    public GatewayFilter apply() {
+        return apply(o -> {
+        });
+    }
 
     public GatewayFilter apply(Object config) {
-		return (exchange, chain) -> {
-			exchange.getAttributes().put(PRESERVE_HOST_HEADER_ATTRIBUTE, true);
-			return chain.filter(exchange);
-		};
-	}
+        return (exchange, chain) -> {
+            exchange.getAttributes().put(PRESERVE_HOST_HEADER_ATTRIBUTE, true);
+            return chain.filter(exchange);
+        };
+    }
 }

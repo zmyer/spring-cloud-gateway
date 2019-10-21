@@ -30,97 +30,103 @@ import reactor.core.publisher.Flux;
 /**
  * Used to build a {@link RouteLocator}
  */
+// TODO: 2019/01/24 by zmyer
 public class RouteLocatorBuilder {
 
-	private ConfigurableApplicationContext context;
+    private ConfigurableApplicationContext context;
 
-	public RouteLocatorBuilder(ConfigurableApplicationContext context) {
-		this.context = context;
-	}
+    public RouteLocatorBuilder(ConfigurableApplicationContext context) {
+        this.context = context;
+    }
 
-	/**
-	 * Creates a new {@link Builder}
-	 * @return a new {@link Builder}
-	 */
-	public Builder routes() {
-		return new Builder(context);
-	}
+    /**
+     * Creates a new {@link Builder}
+     *
+     * @return a new {@link Builder}
+     */
+    public Builder routes() {
+        return new Builder(context);
+    }
 
-	/**
-	 * A class that can be used to construct routes and return a {@link RouteLocator}
-	 */
-	public static class Builder {
+    /**
+     * A class that can be used to construct routes and return a {@link RouteLocator}
+     */
+    // TODO: 2019/01/24 by zmyer
+    public static class Builder {
 
-		private List<Route.AsyncBuilder> routes = new ArrayList<>();
-		private ConfigurableApplicationContext context;
+        private List<Route.AsyncBuilder> routes = new ArrayList<>();
+        private ConfigurableApplicationContext context;
 
-		public Builder(ConfigurableApplicationContext context) {
-			this.context = context;
-		}
+        public Builder(ConfigurableApplicationContext context) {
+            this.context = context;
+        }
 
-		/**
-		 * Creates a new {@link Route}
-		 * @param id the unique id for the route
-		 * @param fn a function which takes in a {@link PredicateSpec} and returns a {@link Route.AsyncBuilder}
-		 * @return a {@link Builder}
-		 */
-		public Builder route(String id, Function<PredicateSpec, Route.AsyncBuilder> fn) {
-			Route.AsyncBuilder routeBuilder = fn.apply(new RouteSpec(this).id(id));
-			add(routeBuilder);
-			return this;
-		}
+        /**
+         * Creates a new {@link Route}
+         *
+         * @param id the unique id for the route
+         * @param fn a function which takes in a {@link PredicateSpec} and returns a {@link Route.AsyncBuilder}
+         * @return a {@link Builder}
+         */
+        public Builder route(String id, Function<PredicateSpec, Route.AsyncBuilder> fn) {
+            Route.AsyncBuilder routeBuilder = fn.apply(new RouteSpec(this).id(id));
+            add(routeBuilder);
+            return this;
+        }
 
-		/**
-		 * Creates a new {@link Route}
-		 * @param fn a function which takes in a {@link PredicateSpec} and returns a {@link Route.AsyncBuilder}
-		 * @return a {@link Builder}
-		 */
-		public Builder route(Function<PredicateSpec, Route.AsyncBuilder> fn) {
-			Route.AsyncBuilder routeBuilder = fn.apply(new RouteSpec(this).randomId());
-			add(routeBuilder);
-			return this;
-		}
+        /**
+         * Creates a new {@link Route}
+         *
+         * @param fn a function which takes in a {@link PredicateSpec} and returns a {@link Route.AsyncBuilder}
+         * @return a {@link Builder}
+         */
+        public Builder route(Function<PredicateSpec, Route.AsyncBuilder> fn) {
+            Route.AsyncBuilder routeBuilder = fn.apply(new RouteSpec(this).randomId());
+            add(routeBuilder);
+            return this;
+        }
 
-		/**
-		 * Builds and returns a {@link RouteLocator}
-		 * @return a {@link RouteLocator}
-		 */
-		public RouteLocator build() {
-			return () -> Flux.fromIterable(this.routes).map(routeBuilder -> routeBuilder.build());
-		}
+        /**
+         * Builds and returns a {@link RouteLocator}
+         *
+         * @return a {@link RouteLocator}
+         */
+        public RouteLocator build() {
+            return () -> Flux.fromIterable(this.routes).map(routeBuilder -> routeBuilder.build());
+        }
 
-		ConfigurableApplicationContext getContext() {
-			return context;
-		}
+        ConfigurableApplicationContext getContext() {
+            return context;
+        }
 
-		void add(Route.AsyncBuilder route) {
-			routes.add(route);
-		}
-	}
+        void add(Route.AsyncBuilder route) {
+            routes.add(route);
+        }
+    }
 
 
-	public static class RouteSpec {
-		private final Route.AsyncBuilder routeBuilder = Route.async();
-		private final Builder builder;
+    public static class RouteSpec {
+        private final Route.AsyncBuilder routeBuilder = Route.async();
+        private final Builder builder;
 
-		RouteSpec(Builder builder) {
-			this.builder = builder;
-		}
+        RouteSpec(Builder builder) {
+            this.builder = builder;
+        }
 
-		public PredicateSpec id(String id) {
-			this.routeBuilder.id(id);
-			return predicateBuilder();
-		}
+        public PredicateSpec id(String id) {
+            this.routeBuilder.id(id);
+            return predicateBuilder();
+        }
 
-		public PredicateSpec randomId() {
-			return id(UUID.randomUUID().toString());
-		}
+        public PredicateSpec randomId() {
+            return id(UUID.randomUUID().toString());
+        }
 
-		private PredicateSpec predicateBuilder() {
-			return new PredicateSpec(this.routeBuilder, this.builder);
-		}
+        private PredicateSpec predicateBuilder() {
+            return new PredicateSpec(this.routeBuilder, this.builder);
+        }
 
-	}
+    }
 
 
 }

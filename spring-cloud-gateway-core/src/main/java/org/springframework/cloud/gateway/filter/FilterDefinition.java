@@ -31,6 +31,7 @@ import static org.springframework.util.StringUtils.tokenizeToStringArray;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 @Validated
 public class FilterDefinition {
 	@NotNull
@@ -48,9 +49,9 @@ public class FilterDefinition {
 		}
 		setName(text.substring(0, eqIdx));
 
-		String[] args = tokenizeToStringArray(text.substring(eqIdx+1), ",");
+		String[] args = tokenizeToStringArray(text.substring(eqIdx + 1), ",");
 
-		for (int i=0; i < args.length; i++) {
+		for (int i = 0; i < args.length; i++) {
 			this.args.put(NameUtils.generateName(i), args[i]);
 		}
 	}

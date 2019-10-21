@@ -11,28 +11,28 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureBefore(GatewayAutoConfiguration.class)
 public class GatewayClassPathWarningAutoConfiguration {
 
-	private static final Log log = LogFactory.getLog(GatewayClassPathWarningAutoConfiguration.class);
-	private static final String BORDER = "\n\n**********************************************************\n\n";
+    private static final Log log = LogFactory.getLog(GatewayClassPathWarningAutoConfiguration.class);
+    private static final String BORDER = "\n\n**********************************************************\n\n";
 
-	@Configuration
-	@ConditionalOnClass(name = "org.springframework.web.servlet.DispatcherServlet")
-	protected static class SpringMvcFoundOnClasspathConfiguration {
+    @Configuration
+    @ConditionalOnClass(name = "org.springframework.web.servlet.DispatcherServlet")
+    protected static class SpringMvcFoundOnClasspathConfiguration {
 
-		public SpringMvcFoundOnClasspathConfiguration() {
-			log.warn(BORDER+"Spring MVC found on classpath, which is incompatible with Spring Cloud Gateway at this time. "+
-					"Please remove spring-boot-starter-web dependency."+BORDER);
-		}
+        public SpringMvcFoundOnClasspathConfiguration() {
+            log.warn(BORDER + "Spring MVC found on classpath, which is incompatible with Spring Cloud Gateway at this time. " +
+                    "Please remove spring-boot-starter-web dependency." + BORDER);
+        }
 
-	}
+    }
 
-	@Configuration
-	@ConditionalOnMissingClass("org.springframework.web.reactive.DispatcherHandler")
-	protected static class WebfluxMissingFromClasspathConfiguration {
+    @Configuration
+    @ConditionalOnMissingClass("org.springframework.web.reactive.DispatcherHandler")
+    protected static class WebfluxMissingFromClasspathConfiguration {
 
-		public WebfluxMissingFromClasspathConfiguration() {
-			log.warn(BORDER+"Spring Webflux is missing from the classpath, which is required for Spring Cloud Gateway at this time. "+
-					"Please add spring-boot-starter-webflux dependency."+BORDER);
-		}
+        public WebfluxMissingFromClasspathConfiguration() {
+            log.warn(BORDER + "Spring Webflux is missing from the classpath, which is required for Spring Cloud Gateway at this time. " +
+                    "Please add spring-boot-starter-webflux dependency." + BORDER);
+        }
 
-	}
+    }
 }

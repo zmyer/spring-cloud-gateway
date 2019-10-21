@@ -17,33 +17,32 @@ import org.springframework.web.server.ServerWebExchange;
  *
  * @author Toshiaki Maki
  */
+// TODO: 2019/01/24 by zmyer
 public class RequestHeaderToRequestUriGatewayFilterFactory extends
-		AbstractChangeRequestUriGatewayFilterFactory<AbstractGatewayFilterFactory.NameConfig> {
-	private final Logger log = LoggerFactory
-			.getLogger(RequestHeaderToRequestUriGatewayFilterFactory.class);
+        AbstractChangeRequestUriGatewayFilterFactory<AbstractGatewayFilterFactory.NameConfig> {
+    private final Logger log = LoggerFactory.getLogger(RequestHeaderToRequestUriGatewayFilterFactory.class);
 
-	public RequestHeaderToRequestUriGatewayFilterFactory() {
-		super(NameConfig.class);
-	}
+    public RequestHeaderToRequestUriGatewayFilterFactory() {
+        super(NameConfig.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(NAME_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(NAME_KEY);
+    }
 
-	@Override
-	protected Optional<URI> determineRequestUri(ServerWebExchange exchange,
-			NameConfig config) {
-		String requestUrl = exchange.getRequest().getHeaders().getFirst(config.getName());
-		return Optional.ofNullable(requestUrl).map(url -> {
-			try {
-				return new URL(url).toURI();
-			}
-			catch (MalformedURLException | URISyntaxException e) {
-				log.info("Request url is invalid : url={}, error={}", requestUrl,
-						e.getMessage());
-				return null;
-			}
-		});
-	}
+    @Override
+    protected Optional<URI> determineRequestUri(ServerWebExchange exchange,
+                                                NameConfig config) {
+        String requestUrl = exchange.getRequest().getHeaders().getFirst(config.getName());
+        return Optional.ofNullable(requestUrl).map(url -> {
+            try {
+                return new URL(url).toURI();
+            } catch (MalformedURLException | URISyntaxException e) {
+                log.info("Request url is invalid : url={}, error={}", requestUrl,
+                        e.getMessage());
+                return null;
+            }
+        });
+    }
 }

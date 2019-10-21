@@ -34,72 +34,70 @@ import org.springframework.web.server.ServerWebExchange;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
+// TODO: 2019/01/25 by zmyer
 public class GatewayMetricsFilter implements GlobalFilter, Ordered {
 
-	private final Log log = LogFactory.getLog(getClass());
+    private final Log log = LogFactory.getLog(getClass());
 
-	private final MeterRegistry meterRegistry;
+    private final MeterRegistry meterRegistry;
 
-	public GatewayMetricsFilter(MeterRegistry meterRegistry) {
-		this.meterRegistry = meterRegistry;
-	}
+    public GatewayMetricsFilter(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
 
-	@Override
-	public int getOrder() {
-		// start the timer as soon as possible and report the metric event before we write
-		// response to client
-		return NettyWriteResponseFilter.WRITE_RESPONSE_FILTER_ORDER + 1;
-	}
+    @Override
+    public int getOrder() {
+        // start the timer as soon as possible and report the metric event before we write
+        // response to client
+        return NettyWriteResponseFilter.WRITE_RESPONSE_FILTER_ORDER + 1;
+    }
 
-	@Override
-	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-		Sample sample = Timer.start(meterRegistry);
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        Sample sample = Timer.start(meterRegistry);
 
-		return chain.filter(exchange).doOnSuccessOrError((aVoid, ex) -> {
-			endTimerRespectingCommit(exchange, sample);
-		});
-	}
+        return chain.filter(exchange).doOnSuccessOrError((aVoid, ex) -> {
+            endTimerRespectingCommit(exchange, sample);
+        });
+    }
 
-	private void endTimerRespectingCommit(ServerWebExchange exchange, Sample sample) {
+    private void endTimerRespectingCommit(ServerWebExchange exchange, Sample sample) {
 
-		ServerHttpResponse response = exchange.getResponse();
-		if (response.isCommitted()) {
-			endTimerInner(exchange, sample);
-		}
-		else {
-			response.beforeCommit(() -> {
-				endTimerInner(exchange, sample);
-				return Mono.empty();
-			});
-		}
-	}
+        ServerHttpResponse response = exchange.getResponse();
+        if (response.isCommitted()) {
+            endTimerInner(exchange, sample);
+        } else {
+            response.beforeCommit(() -> {
+                endTimerInner(exchange, sample);
+                return Mono.empty();
+            });
+        }
+    }
 
-	private void endTimerInner(ServerWebExchange exchange, Sample sample) {
-		String outcome = "CUSTOM";
-		String status = "CUSTOM";
-		HttpStatus statusCode = exchange.getResponse().getStatusCode();
-		if (statusCode != null) {
-			outcome = statusCode.series().name();
-			status = statusCode.name();
-		}
-		else { // a non standard HTTPS status could be used. Let's be defensive here
-			if (exchange.getResponse() instanceof AbstractServerHttpResponse) {
-				Integer statusInt = ((AbstractServerHttpResponse) exchange.getResponse())
-						.getStatusCodeValue();
-				if (statusInt != null) {
-					status = String.valueOf(statusInt);
-				}
-				else {
-					status = "NA";
-				}
-			}
-		}
-		Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
-		Tags tags = Tags.of("outcome", outcome, "status", status, "routeId",
-				route.getId(), "routeUri", route.getUri().toString());
-		if (log.isTraceEnabled()) {
-			log.trace("Stopping timer 'gateway.requests' with tags " + tags);
-		}
-		sample.stop(meterRegistry.timer("gateway.requests", tags));
-	}
+    private void endTimerInner(ServerWebExchange exchange, Sample sample) {
+        String outcome = "CUSTOM";
+        String status = "CUSTOM";
+        HttpStatus statusCode = exchange.getResponse().getStatusCode();
+        if (statusCode != null) {
+            outcome = statusCode.series().name();
+            status = statusCode.name();
+        } else { // a non standard HTTPS status could be used. Let's be defensive here
+            if (exchange.getResponse() instanceof AbstractServerHttpResponse) {
+                Integer statusInt = ((AbstractServerHttpResponse) exchange.getResponse())
+                        .getStatusCodeValue();
+                if (statusInt != null) {
+                    status = String.valueOf(statusInt);
+                } else {
+                    status = "NA";
+                }
+            }
+        }
+        Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
+        Tags tags = Tags.of("outcome", outcome, "status", status, "routeId",
+                route.getId(), "routeUri", route.getUri().toString());
+        if (log.isTraceEnabled()) {
+            log.trace("Stopping timer 'gateway.requests' with tags " + tags);
+        }
+        sample.stop(meterRegistry.timer("gateway.requests", tags));
+    }
 }

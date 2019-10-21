@@ -143,12 +143,13 @@ import static org.springframework.cloud.gateway.config.HttpClientProperties.Pool
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/26 by zmyer
 @Configuration
 @ConditionalOnProperty(name = "spring.cloud.gateway.enabled", matchIfMissing = true)
 @EnableConfigurationProperties
-@AutoConfigureBefore({ HttpHandlerAutoConfiguration.class, WebFluxAutoConfiguration.class })
-@AutoConfigureAfter({ GatewayLoadBalancerClientAutoConfiguration.class,
-		GatewayClassPathWarningAutoConfiguration.class })
+@AutoConfigureBefore({HttpHandlerAutoConfiguration.class, WebFluxAutoConfiguration.class})
+@AutoConfigureAfter({GatewayLoadBalancerClientAutoConfiguration.class,
+		GatewayClassPathWarningAutoConfiguration.class})
 @ConditionalOnClass(DispatcherHandler.class)
 public class GatewayAutoConfiguration {
 
@@ -173,40 +174,40 @@ public class GatewayAutoConfiguration {
 			}
 
 			HttpClient httpClient = HttpClient.create(connectionProvider)
-				.tcpConfiguration(tcpClient -> {
+					.tcpConfiguration(tcpClient -> {
 
-					if (properties.getConnectTimeout() != null) {
-						tcpClient = tcpClient.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, properties.getConnectTimeout());
-					}
+						if (properties.getConnectTimeout() != null) {
+							tcpClient = tcpClient.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, properties.getConnectTimeout());
+						}
 
-					// configure proxy if proxy host is set.
-					HttpClientProperties.Proxy proxy = properties.getProxy();
+						// configure proxy if proxy host is set.
+						HttpClientProperties.Proxy proxy = properties.getProxy();
 
-					if (StringUtils.hasText(proxy.getHost())) {
+						if (StringUtils.hasText(proxy.getHost())) {
 
-						tcpClient = tcpClient.proxy(proxySpec -> {
-							ProxyProvider.Builder builder = proxySpec
-									.type(ProxyProvider.Proxy.HTTP)
-									.host(proxy.getHost());
+							tcpClient = tcpClient.proxy(proxySpec -> {
+								ProxyProvider.Builder builder = proxySpec
+										.type(ProxyProvider.Proxy.HTTP)
+										.host(proxy.getHost());
 
-							PropertyMapper map = PropertyMapper.get();
+								PropertyMapper map = PropertyMapper.get();
 
-							map.from(proxy::getPort)
-									.whenNonNull()
-									.to(builder::port);
-							map.from(proxy::getUsername)
-									.whenHasText()
-									.to(builder::username);
-							map.from(proxy::getPassword)
-									.whenHasText()
-									.to(password -> builder.password(s -> password));
-							map.from(proxy::getNonProxyHostsPattern)
-									.whenHasText()
-									.to(builder::nonProxyHosts);
-						});
-					}
-					return tcpClient;
-				});
+								map.from(proxy::getPort)
+										.whenNonNull()
+										.to(builder::port);
+								map.from(proxy::getUsername)
+										.whenHasText()
+										.to(builder::username);
+								map.from(proxy::getPassword)
+										.whenHasText()
+										.to(password -> builder.password(s -> password));
+								map.from(proxy::getNonProxyHostsPattern)
+										.whenHasText()
+										.to(builder::nonProxyHosts);
+							});
+						}
+						return tcpClient;
+					});
 
 			HttpClientProperties.Ssl ssl = properties.getSsl();
 			if (ssl.getTrustedX509CertificatesForTrustManager().length > 0
@@ -252,7 +253,8 @@ public class GatewayAutoConfiguration {
 		}
 
 		@Bean
-		public ReactorNettyWebSocketClient reactorNettyWebSocketClient(/*@Qualifier("nettyClientOptions") Consumer<? super HttpClientOptions.Builder> options*/) {
+		public ReactorNettyWebSocketClient reactorNettyWebSocketClient(
+				/*@Qualifier("nettyClientOptions") Consumer<? super HttpClientOptions.Builder> options*/) {
 			return new ReactorNettyWebSocketClient(/*options*/); //FIXME 2.1.0
 		}
 	}
@@ -304,7 +306,7 @@ public class GatewayAutoConfiguration {
 													List<RoutePredicateFactory> predicates,
 													RouteDefinitionLocator routeDefinitionLocator,
 													@Qualifier("webFluxConversionService")
-													ConversionService conversionService) {
+															ConversionService conversionService) {
 		return new RouteDefinitionRouteLocator(routeDefinitionLocator, predicates, GatewayFilters,
 				properties, conversionService);
 	}
@@ -330,7 +332,7 @@ public class GatewayAutoConfiguration {
 	public GlobalCorsProperties globalCorsProperties() {
 		return new GlobalCorsProperties();
 	}
-	
+
 	@Bean
 	public RoutePredicateHandlerMapping routePredicateHandlerMapping(
 			FilteringWebHandler webHandler, RouteLocator routeLocator,
@@ -371,7 +373,7 @@ public class GatewayAutoConfiguration {
 	}
 
 	// GlobalFilter beans
-	
+
 	@Bean
 	public AdaptCachedBodyGlobalFilter adaptCachedBodyGlobalFilter() {
 		return new AdaptCachedBodyGlobalFilter();
@@ -635,8 +637,8 @@ public class GatewayAutoConfiguration {
 		@Bean
 		@ConditionalOnEnabledEndpoint
 		public GatewayControllerEndpoint gatewayControllerEndpoint(RouteDefinitionLocator routeDefinitionLocator, List<GlobalFilter> globalFilters,
-																List<GatewayFilterFactory> GatewayFilters, RouteDefinitionWriter routeDefinitionWriter,
-																RouteLocator routeLocator) {
+																   List<GatewayFilterFactory> GatewayFilters, RouteDefinitionWriter routeDefinitionWriter,
+																   RouteLocator routeLocator) {
 			return new GatewayControllerEndpoint(routeDefinitionLocator, globalFilters, GatewayFilters, routeDefinitionWriter, routeLocator);
 		}
 	}

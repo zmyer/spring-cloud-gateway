@@ -42,120 +42,122 @@ import reactor.core.publisher.Mono;
  * @author Spencer Gibb
  * @author Tim Ysewyn
  */
+// TODO: 2019/01/26 by zmyer
 public class LoadBalancerClientFilter implements GlobalFilter, Ordered {
 
-	private static final Log log = LogFactory.getLog(LoadBalancerClientFilter.class);
-	public static final int LOAD_BALANCER_CLIENT_FILTER_ORDER = 10100;
+    private static final Log log = LogFactory.getLog(LoadBalancerClientFilter.class);
+    public static final int LOAD_BALANCER_CLIENT_FILTER_ORDER = 10100;
 
-	protected final LoadBalancerClient loadBalancer;
+    protected final LoadBalancerClient loadBalancer;
 
-	private LoadBalancerProperties properties;
+    private LoadBalancerProperties properties;
 
-	public LoadBalancerClientFilter(LoadBalancerClient loadBalancer, LoadBalancerProperties properties) {
-		this.loadBalancer = loadBalancer;
-		this.properties = properties;
-	}
+    public LoadBalancerClientFilter(LoadBalancerClient loadBalancer, LoadBalancerProperties properties) {
+        this.loadBalancer = loadBalancer;
+        this.properties = properties;
+    }
 
-	@Override
-	public int getOrder() {
-		return LOAD_BALANCER_CLIENT_FILTER_ORDER;
-	}
+    @Override
+    public int getOrder() {
+        return LOAD_BALANCER_CLIENT_FILTER_ORDER;
+    }
 
-	@Override
-	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-		URI url = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
-		String schemePrefix = exchange.getAttribute(GATEWAY_SCHEME_PREFIX_ATTR);
-		if (url == null || (!"lb".equals(url.getScheme()) && !"lb".equals(schemePrefix))) {
-			return chain.filter(exchange);
-		}
-		//preserve the original url
-		addOriginalRequestUrl(exchange, url);
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        URI url = exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR);
+        String schemePrefix = exchange.getAttribute(GATEWAY_SCHEME_PREFIX_ATTR);
+        if (url == null || (!"lb".equals(url.getScheme()) && !"lb".equals(schemePrefix))) {
+            return chain.filter(exchange);
+        }
+        //preserve the original url
+        addOriginalRequestUrl(exchange, url);
 
-		log.trace("LoadBalancerClientFilter url before: " + url);
+        log.trace("LoadBalancerClientFilter url before: " + url);
 
-		final ServiceInstance instance = choose(exchange);
+        final ServiceInstance instance = choose(exchange);
 
-		if (instance == null) {
-			String msg = "Unable to find instance for " + url.getHost();
-			if(properties.isUse404()) {
-				throw new FourOFourNotFoundException(msg);
-			}
-			throw new NotFoundException(msg);
-		}
+        if (instance == null) {
+            String msg = "Unable to find instance for " + url.getHost();
+            if (properties.isUse404()) {
+                throw new FourOFourNotFoundException(msg);
+            }
+            throw new NotFoundException(msg);
+        }
 
-		URI uri = exchange.getRequest().getURI();
+        URI uri = exchange.getRequest().getURI();
 
-		// if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
-		// if the loadbalancer doesn't provide one.
-		String overrideScheme = null;
-		if (schemePrefix != null) {
-			overrideScheme = url.getScheme();
-		}
+        // if the `lb:<scheme>` mechanism was used, use `<scheme>` as the default,
+        // if the loadbalancer doesn't provide one.
+        String overrideScheme = null;
+        if (schemePrefix != null) {
+            overrideScheme = url.getScheme();
+        }
 
-		URI requestUrl = loadBalancer.reconstructURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
+        URI requestUrl = loadBalancer.reconstructURI(new DelegatingServiceInstance(instance, overrideScheme), uri);
 
-		log.trace("LoadBalancerClientFilter url chosen: " + requestUrl);
-		exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
-		return chain.filter(exchange);
-	}
+        log.trace("LoadBalancerClientFilter url chosen: " + requestUrl);
+        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
+        return chain.filter(exchange);
+    }
 
-	protected ServiceInstance choose(ServerWebExchange exchange) {
-		return loadBalancer.choose(((URI) exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR)).getHost());
-	}
-	@ResponseStatus(value = NOT_FOUND, reason = "The service was not found.")
-	static class FourOFourNotFoundException extends RuntimeException {
-		public FourOFourNotFoundException(String msg) {
-			super(msg);
-		}
-	}
+    protected ServiceInstance choose(ServerWebExchange exchange) {
+        return loadBalancer.choose(((URI) exchange.getAttribute(GATEWAY_REQUEST_URL_ATTR)).getHost());
+    }
 
-	class DelegatingServiceInstance implements ServiceInstance {
-		final ServiceInstance delegate;
-		private String overrideScheme;
+    @ResponseStatus(value = NOT_FOUND, reason = "The service was not found.")
+    static class FourOFourNotFoundException extends RuntimeException {
+        public FourOFourNotFoundException(String msg) {
+            super(msg);
+        }
+    }
 
-		DelegatingServiceInstance(ServiceInstance delegate, String overrideScheme) {
-			this.delegate = delegate;
-			this.overrideScheme = overrideScheme;
-		}
+    class DelegatingServiceInstance implements ServiceInstance {
+        final ServiceInstance delegate;
+        private String overrideScheme;
 
-		@Override
-		public String getServiceId() {
-			return delegate.getServiceId();
-		}
+        DelegatingServiceInstance(ServiceInstance delegate, String overrideScheme) {
+            this.delegate = delegate;
+            this.overrideScheme = overrideScheme;
+        }
 
-		@Override
-		public String getHost() {
-			return delegate.getHost();
-		}
+        @Override
+        public String getServiceId() {
+            return delegate.getServiceId();
+        }
 
-		@Override
-		public int getPort() {
-			return delegate.getPort();
-		}
+        @Override
+        public String getHost() {
+            return delegate.getHost();
+        }
 
-		@Override
-		public boolean isSecure() {
-			return delegate.isSecure();
-		}
+        @Override
+        public int getPort() {
+            return delegate.getPort();
+        }
 
-		@Override
-		public URI getUri() {
-			return delegate.getUri();
-		}
+        @Override
+        public boolean isSecure() {
+            return delegate.isSecure();
+        }
 
-		@Override
-		public Map<String, String> getMetadata() {
-			return delegate.getMetadata();
-		}
+        @Override
+        public URI getUri() {
+            return delegate.getUri();
+        }
 
-		@Override
-		public String getScheme() {
-			String scheme = delegate.getScheme();
-			if (scheme != null) {
-				return scheme;
-			}
-			return this.overrideScheme;
-		}
+        @Override
+        public Map<String, String> getMetadata() {
+            return delegate.getMetadata();
+        }
 
-	}
+        @Override
+        public String getScheme() {
+            String scheme = delegate.getScheme();
+            if (scheme != null) {
+                return scheme;
+            }
+            return this.overrideScheme;
+        }
+
+    }
 }

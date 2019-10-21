@@ -30,48 +30,51 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.a
 /**
  * This filter removes the first part of the path, known as the prefix, from the request
  * before sending it downstream
+ *
  * @author Ryan Baxter
  */
-public class StripPrefixGatewayFilterFactory extends AbstractGatewayFilterFactory<StripPrefixGatewayFilterFactory.Config> {
+// TODO: 2019/01/24 by zmyer
+public class StripPrefixGatewayFilterFactory
+        extends AbstractGatewayFilterFactory<StripPrefixGatewayFilterFactory.Config> {
 
-	public static final String PARTS_KEY = "parts";
+    public static final String PARTS_KEY = "parts";
 
-	public StripPrefixGatewayFilterFactory() {
-		super(Config.class);
-	}
+    public StripPrefixGatewayFilterFactory() {
+        super(Config.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(PARTS_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(PARTS_KEY);
+    }
 
-	@Override
-	public GatewayFilter apply(Config config) {
-		return (exchange, chain) ->  {
-			ServerHttpRequest request = exchange.getRequest();
-			addOriginalRequestUrl(exchange, request.getURI());
-			String path = request.getURI().getRawPath();
-			String newPath = "/" + Arrays.stream(StringUtils.tokenizeToStringArray(path, "/"))
-					.skip(config.parts).collect(Collectors.joining("/"));
-			ServerHttpRequest newRequest = request.mutate()
-					.path(newPath)
-					.build();
+    @Override
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
+            addOriginalRequestUrl(exchange, request.getURI());
+            String path = request.getURI().getRawPath();
+            String newPath = "/" + Arrays.stream(StringUtils.tokenizeToStringArray(path, "/"))
+                    .skip(config.parts).collect(Collectors.joining("/"));
+            ServerHttpRequest newRequest = request.mutate()
+                    .path(newPath)
+                    .build();
 
-			exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, newRequest.getURI());
+            exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, newRequest.getURI());
 
-			return chain.filter(exchange.mutate().request(newRequest).build());
-		};
-	}
+            return chain.filter(exchange.mutate().request(newRequest).build());
+        };
+    }
 
-	public static class Config {
-		private int parts;
+    public static class Config {
+        private int parts;
 
-		public int getParts() {
-			return parts;
-		}
+        public int getParts() {
+            return parts;
+        }
 
-		public void setParts(int parts) {
-			this.parts = parts;
-		}
-	}
+        public void setParts(int parts) {
+            this.parts = parts;
+        }
+    }
 }

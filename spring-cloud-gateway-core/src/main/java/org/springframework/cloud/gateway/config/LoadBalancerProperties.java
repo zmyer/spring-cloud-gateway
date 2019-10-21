@@ -21,15 +21,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * @author Ryan Baxter
  */
+// TODO: 2019/01/26 by zmyer
 @ConfigurationProperties("spring.cloud.gateway.loadbalancer")
 public class LoadBalancerProperties {
-	private boolean use404;
+    private boolean use404;
 
-	public boolean isUse404() {
-		return use404;
-	}
+    public boolean isUse404() {
+        return use404;
+    }
 
-	public void setUse404(boolean use404) {
-		this.use404 = use404;
-	}
+    public void setUse404(boolean use404) {
+        this.use404 = use404;
+    }
 }

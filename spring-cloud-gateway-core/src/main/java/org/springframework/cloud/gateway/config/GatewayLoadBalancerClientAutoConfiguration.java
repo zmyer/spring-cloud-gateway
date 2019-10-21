@@ -33,18 +33,19 @@ import org.springframework.web.reactive.DispatcherHandler;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/26 by zmyer
 @Configuration
 @ConditionalOnClass({LoadBalancerClient.class, RibbonAutoConfiguration.class, DispatcherHandler.class})
 @AutoConfigureAfter(RibbonAutoConfiguration.class)
 @EnableConfigurationProperties(LoadBalancerProperties.class)
 public class GatewayLoadBalancerClientAutoConfiguration {
 
-	// GlobalFilter beans
+    // GlobalFilter beans
 
-	@Bean
-	@ConditionalOnBean(LoadBalancerClient.class)
-	@ConditionalOnMissingBean(LoadBalancerClientFilter.class)
-	public LoadBalancerClientFilter loadBalancerClientFilter(LoadBalancerClient client, LoadBalancerProperties properties) {
-		return new LoadBalancerClientFilter(client, properties);
-	}
+    @Bean
+    @ConditionalOnBean(LoadBalancerClient.class)
+    @ConditionalOnMissingBean(LoadBalancerClientFilter.class)
+    public LoadBalancerClientFilter loadBalancerClientFilter(LoadBalancerClient client, LoadBalancerProperties properties) {
+        return new LoadBalancerClientFilter(client, properties);
+    }
 }

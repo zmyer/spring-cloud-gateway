@@ -30,43 +30,41 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.util.Assert;
 
 // see ZuulDiscoveryRefreshListener
+// TODO: 2019/01/25 by zmyer
 // TODO: make abstract class in commons?
-public class RouteRefreshListener
-		implements ApplicationListener<ApplicationEvent> {
+public class RouteRefreshListener implements ApplicationListener<ApplicationEvent> {
 
-	private HeartbeatMonitor monitor = new HeartbeatMonitor();
-	private final ApplicationEventPublisher publisher;
+    private HeartbeatMonitor monitor = new HeartbeatMonitor();
+    private final ApplicationEventPublisher publisher;
 
-	public RouteRefreshListener(ApplicationEventPublisher publisher) {
-		Assert.notNull(publisher, "publisher may not be null");
-		this.publisher = publisher;
-	}
+    public RouteRefreshListener(ApplicationEventPublisher publisher) {
+        Assert.notNull(publisher, "publisher may not be null");
+        this.publisher = publisher;
+    }
 
-	@Override
-	public void onApplicationEvent(ApplicationEvent event) {
-		if (event instanceof ContextRefreshedEvent
-				|| event instanceof RefreshScopeRefreshedEvent
-				|| event instanceof InstanceRegisteredEvent) {
-			reset();
-		}
-		else if (event instanceof ParentHeartbeatEvent) {
-			ParentHeartbeatEvent e = (ParentHeartbeatEvent) event;
-			resetIfNeeded(e.getValue());
-		}
-		else if (event instanceof HeartbeatEvent) {
-			HeartbeatEvent e = (HeartbeatEvent) event;
-			resetIfNeeded(e.getValue());
-		}
-	}
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof ContextRefreshedEvent
+                || event instanceof RefreshScopeRefreshedEvent
+                || event instanceof InstanceRegisteredEvent) {
+            reset();
+        } else if (event instanceof ParentHeartbeatEvent) {
+            ParentHeartbeatEvent e = (ParentHeartbeatEvent) event;
+            resetIfNeeded(e.getValue());
+        } else if (event instanceof HeartbeatEvent) {
+            HeartbeatEvent e = (HeartbeatEvent) event;
+            resetIfNeeded(e.getValue());
+        }
+    }
 
-	private void resetIfNeeded(Object value) {
-		if (this.monitor.update(value)) {
-			reset();
-		}
-	}
+    private void resetIfNeeded(Object value) {
+        if (this.monitor.update(value)) {
+            reset();
+        }
+    }
 
-	private void reset() {
-		this.publisher.publishEvent(new RefreshRoutesEvent(this));
-	}
+    private void reset() {
+        this.publisher.publishEvent(new RefreshRoutesEvent(this));
+    }
 
 }

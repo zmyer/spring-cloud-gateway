@@ -22,43 +22,42 @@ import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 
+// TODO: 2019/01/26 by zmyer
 public interface HttpHeadersFilter {
 
 	enum Type {
-		REQUEST, RESPONSE
+		REQUEST,
+		RESPONSE
 	}
 
 	/**
 	 * Filters a set of Http Headers
-	 * 
-	 * @param input Http Headers
+	 *
+	 * @param input    Http Headers
 	 * @param exchange
 	 * @return filtered Http Headers
 	 */
 	HttpHeaders filter(HttpHeaders input, ServerWebExchange exchange);
 
 	static HttpHeaders filterRequest(List<HttpHeadersFilter> filters,
-							  ServerWebExchange exchange) {
+									 ServerWebExchange exchange) {
 		HttpHeaders headers = exchange.getRequest().getHeaders();
 		return filter(filters, headers, exchange, Type.REQUEST);
 	}
 
 	static HttpHeaders filter(List<HttpHeadersFilter> filters, HttpHeaders input,
-			ServerWebExchange exchange, Type type) {
-		HttpHeaders response = input;
+							  ServerWebExchange exchange, Type type) {
 		if (filters != null) {
-			HttpHeaders reduce = filters.stream()
+			return filters.stream()
 					.filter(headersFilter -> headersFilter.supports(type))
-					.reduce(input,
-							(headers, filter) -> filter.filter(headers, exchange),
+					.reduce(input, (headers, filter) -> filter.filter(headers, exchange),
 							(httpHeaders, httpHeaders2) -> {
 								httpHeaders.addAll(httpHeaders2);
 								return httpHeaders;
 							});
-			return reduce;
 		}
 
-		return response;
+		return input;
 	}
 
 	default boolean supports(Type type) {

@@ -30,13 +30,14 @@ import reactor.core.publisher.Mono;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 public class InMemoryRouteDefinitionRepository implements RouteDefinitionRepository {
 
-	private final Map<String, RouteDefinition> routes = synchronizedMap(new LinkedHashMap<String, RouteDefinition>());
+	private final Map<String, RouteDefinition> routes = synchronizedMap(new LinkedHashMap<>());
 
 	@Override
 	public Mono<Void> save(Mono<RouteDefinition> route) {
-		return route.flatMap( r -> {
+		return route.flatMap(r -> {
 			routes.put(r.getId(), r);
 			return Mono.empty();
 		});
@@ -49,7 +50,7 @@ public class InMemoryRouteDefinitionRepository implements RouteDefinitionReposit
 				routes.remove(id);
 				return Mono.empty();
 			}
-			return Mono.defer(() -> Mono.error(new NotFoundException("RouteDefinition not found: "+routeId)));
+			return Mono.defer(() -> Mono.error(new NotFoundException("RouteDefinition not found: " + routeId)));
 		});
 	}
 

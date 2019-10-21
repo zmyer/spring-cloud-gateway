@@ -27,40 +27,41 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class AddRequestParameterGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
-	@Override
-	public GatewayFilter apply(NameValueConfig config) {
-		return (exchange, chain) -> {
-			URI uri = exchange.getRequest().getURI();
-			StringBuilder query = new StringBuilder();
-			String originalQuery = uri.getRawQuery();
+    @Override
+    public GatewayFilter apply(NameValueConfig config) {
+        return (exchange, chain) -> {
+            URI uri = exchange.getRequest().getURI();
+            StringBuilder query = new StringBuilder();
+            String originalQuery = uri.getRawQuery();
 
-			if (StringUtils.hasText(originalQuery)) {
-				query.append(originalQuery);
-				if (originalQuery.charAt(originalQuery.length() - 1) != '&') {
-					query.append('&');
-				}
-			}
+            if (StringUtils.hasText(originalQuery)) {
+                query.append(originalQuery);
+                if (originalQuery.charAt(originalQuery.length() - 1) != '&') {
+                    query.append('&');
+                }
+            }
 
-			//TODO urlencode?
-			query.append(config.getName());
-			query.append('=');
-			query.append(config.getValue());
+            //TODO urlencode?
+            query.append(config.getName());
+            query.append('=');
+            query.append(config.getValue());
 
-			try {
-				URI newUri = UriComponentsBuilder.fromUri(uri)
-						.replaceQuery(query.toString())
-						.build(true)
-						.toUri();
+            try {
+                URI newUri = UriComponentsBuilder.fromUri(uri)
+                        .replaceQuery(query.toString())
+                        .build(true)
+                        .toUri();
 
-				ServerHttpRequest request = exchange.getRequest().mutate().uri(newUri).build();
+                ServerHttpRequest request = exchange.getRequest().mutate().uri(newUri).build();
 
-				return chain.filter(exchange.mutate().request(request).build());
-			} catch (RuntimeException ex) {
-				throw new IllegalStateException("Invalid URI query: \"" + query.toString() + "\"");
-			}
-		};
-	}
+                return chain.filter(exchange.mutate().request(request).build());
+            } catch (RuntimeException ex) {
+                throw new IllegalStateException("Invalid URI query: \"" + query.toString() + "\"");
+            }
+        };
+    }
 
 }

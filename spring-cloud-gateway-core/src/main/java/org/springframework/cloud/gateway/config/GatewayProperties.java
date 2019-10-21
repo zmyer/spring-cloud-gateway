@@ -33,55 +33,56 @@ import org.springframework.validation.annotation.Validated;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 @ConfigurationProperties("spring.cloud.gateway")
 @Validated
 public class GatewayProperties {
 
-	/**
-	 * List of Routes
-	 */
-	@NotNull
-	@Valid
-	private List<RouteDefinition> routes = new ArrayList<>();
+    /**
+     * List of Routes
+     */
+    @NotNull
+    @Valid
+    private List<RouteDefinition> routes = new ArrayList<>();
 
-	/**
-	 * List of filter definitions that are applied to every route.
-	 */
-	private List<FilterDefinition> defaultFilters = new ArrayList<>();
+    /**
+     * List of filter definitions that are applied to every route.
+     */
+    private List<FilterDefinition> defaultFilters = new ArrayList<>();
 
-	private List<MediaType> streamingMediaTypes = Arrays.asList(MediaType.TEXT_EVENT_STREAM,
-			MediaType.APPLICATION_STREAM_JSON);
+    private List<MediaType> streamingMediaTypes = Arrays.asList(MediaType.TEXT_EVENT_STREAM,
+            MediaType.APPLICATION_STREAM_JSON);
 
-	public List<RouteDefinition> getRoutes() {
-		return routes;
-	}
+    public List<RouteDefinition> getRoutes() {
+        return routes;
+    }
 
-	public void setRoutes(List<RouteDefinition> routes) {
-		this.routes = routes;
-	}
+    public void setRoutes(List<RouteDefinition> routes) {
+        this.routes = routes;
+    }
 
-	public List<FilterDefinition> getDefaultFilters() {
-		return defaultFilters;
-	}
+    public List<FilterDefinition> getDefaultFilters() {
+        return defaultFilters;
+    }
 
-	public void setDefaultFilters(List<FilterDefinition> defaultFilters) {
-		this.defaultFilters = defaultFilters;
-	}
+    public void setDefaultFilters(List<FilterDefinition> defaultFilters) {
+        this.defaultFilters = defaultFilters;
+    }
 
-	public List<MediaType> getStreamingMediaTypes() {
-		return streamingMediaTypes;
-	}
+    public List<MediaType> getStreamingMediaTypes() {
+        return streamingMediaTypes;
+    }
 
-	public void setStreamingMediaTypes(List<MediaType> streamingMediaTypes) {
-		this.streamingMediaTypes = streamingMediaTypes;
-	}
+    public void setStreamingMediaTypes(List<MediaType> streamingMediaTypes) {
+        this.streamingMediaTypes = streamingMediaTypes;
+    }
 
-	@Override
-	public String toString() {
-		return "GatewayProperties{" +
-				"routes=" + routes +
-				", defaultFilters=" + defaultFilters +
-				", streamingMediaTypes=" + streamingMediaTypes +
-				'}';
-	}
+    @Override
+    public String toString() {
+        return "GatewayProperties{" +
+                "routes=" + routes +
+                ", defaultFilters=" + defaultFilters +
+                ", streamingMediaTypes=" + streamingMediaTypes +
+                '}';
+    }
 }

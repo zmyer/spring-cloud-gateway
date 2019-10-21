@@ -21,29 +21,31 @@ import org.springframework.cloud.gateway.support.AbstractConfigurable;
 
 /**
  * This class is BETA and may be subject to change in a future release.
+ *
  * @param <C>
  */
+// TODO: 2019/01/24 by zmyer
 public abstract class AbstractGatewayFilterFactory<C>
-		extends AbstractConfigurable<C> implements GatewayFilterFactory<C> {
+        extends AbstractConfigurable<C> implements GatewayFilterFactory<C> {
 
-	@SuppressWarnings("unchecked")
-	public AbstractGatewayFilterFactory() {
-		super((Class<C>) Object.class);
-	}
+    @SuppressWarnings("unchecked")
+    public AbstractGatewayFilterFactory() {
+        super((Class<C>) Object.class);
+    }
 
-	public AbstractGatewayFilterFactory(Class<C> configClass) {
-		super(configClass);
-	}
+    public AbstractGatewayFilterFactory(Class<C> configClass) {
+        super(configClass);
+    }
 
-	public static class NameConfig {
-		private String name;
+    public static class NameConfig {
+        private String name;
 
-		public String getName() {
-			return name;
-		}
+        public String getName() {
+            return name;
+        }
 
-		public void setName(String name) {
-			this.name = name;
-		}
-	}
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
 }

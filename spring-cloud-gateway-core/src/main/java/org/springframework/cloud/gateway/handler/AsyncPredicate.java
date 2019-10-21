@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
 /**
  * @author Ben Hale
  */
+// TODO: 2019/01/24 by zmyer
 public interface AsyncPredicate<T> extends Function<T, Publisher<Boolean>> {
 
 	default AsyncPredicate<T> and(AsyncPredicate<? super T> other) {

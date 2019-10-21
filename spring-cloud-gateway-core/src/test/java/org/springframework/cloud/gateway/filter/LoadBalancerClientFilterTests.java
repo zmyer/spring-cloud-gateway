@@ -240,6 +240,7 @@ public class LoadBalancerClientFilterTests {
 		verifyZeroInteractions(loadBalancerClient);
 	}
 
+	/*
 	@Test
 	public void shouldSelectSpecifiedServer() {
 		URI uri1 = UriComponentsBuilder.fromUriString("lb://myservice").port(11111).build().toUri();
@@ -285,6 +286,7 @@ public class LoadBalancerClientFilterTests {
 		loadBalancerClientFilter.filter(exchange, chain);
 		assertThat(((URI)exchange.getAttributes().get(GATEWAY_REQUEST_URL_ATTR)).getHost()).isEqualTo("myservice-host2");
 	}
+	*/
 
 	private ServerWebExchange testFilter(MockServerHttpRequest request, URI uri) {
 		return testFilter(MockServerWebExchange.from(request), uri);

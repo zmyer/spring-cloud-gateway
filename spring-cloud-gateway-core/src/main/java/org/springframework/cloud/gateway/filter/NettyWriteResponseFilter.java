@@ -38,6 +38,7 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.C
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 
 	private static final Log log = LogFactory.getLog(NettyWriteResponseFilter.class);
@@ -90,7 +91,7 @@ public class NettyWriteResponseFilter implements GlobalFilter, Ordered {
 	//TODO: port to WebClientWriteResponseFilter
 	private boolean isStreamingMediaType(@Nullable MediaType contentType) {
 		return (contentType != null && this.streamingMediaTypes.stream()
-						.anyMatch(contentType::isCompatibleWith));
+				.anyMatch(contentType::isCompatibleWith));
 	}
 
 }

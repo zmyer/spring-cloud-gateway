@@ -24,8 +24,10 @@ import org.springframework.web.server.ServerWebExchange;
 
 /**
  * This interface is BETA and may be subject to change in a future release.
+ *
  * @param <T>
  * @param <R>
  */
+// TODO: 2019/01/24 by zmyer
 public interface RewriteFunction<T, R> extends BiFunction<ServerWebExchange, T, Publisher<R>> {
 }

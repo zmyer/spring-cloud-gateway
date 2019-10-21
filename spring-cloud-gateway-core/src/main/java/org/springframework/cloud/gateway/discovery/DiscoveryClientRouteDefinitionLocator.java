@@ -37,6 +37,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * TODO: change to RouteLocator? use java dsl
+ *
  * @author Spencer Gibb
  */
 public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLocator {
@@ -88,8 +89,8 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 				.map(instance -> {
 					String serviceId = instance.getServiceId();
 
-                    RouteDefinition routeDefinition = new RouteDefinition();
-                    routeDefinition.setId(this.routeIdPrefix + serviceId);
+					RouteDefinition routeDefinition = new RouteDefinition();
+					routeDefinition.setId(this.routeIdPrefix + serviceId);
 					String uri = urlExpr.getValue(evalCtxt, instance, String.class);
 					routeDefinition.setUri(URI.create(uri));
 
@@ -105,9 +106,9 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 						routeDefinition.getPredicates().add(predicate);
 					}
 
-                    for (FilterDefinition original : this.properties.getFilters()) {
-                    	FilterDefinition filter = new FilterDefinition();
-                    	filter.setName(original.getName());
+					for (FilterDefinition original : this.properties.getFilters()) {
+						FilterDefinition filter = new FilterDefinition();
+						filter.setName(original.getName());
 						for (Map.Entry<String, String> entry : original.getArgs().entrySet()) {
 							String value = getValueFromExpr(evalCtxt, parser, instanceForEval, entry);
 							filter.addArg(entry.getKey(), value);
@@ -115,11 +116,12 @@ public class DiscoveryClientRouteDefinitionLocator implements RouteDefinitionLoc
 						routeDefinition.getFilters().add(filter);
 					}
 
-                    return routeDefinition;
+					return routeDefinition;
 				});
 	}
 
-	String getValueFromExpr(SimpleEvaluationContext evalCtxt, SpelExpressionParser parser, ServiceInstance instance, Map.Entry<String, String> entry) {
+	String getValueFromExpr(SimpleEvaluationContext evalCtxt, SpelExpressionParser parser,
+							ServiceInstance instance, Map.Entry<String, String> entry) {
 		Expression valueExpr = parser.parseExpression(entry.getValue());
 		return valueExpr.getValue(evalCtxt, instance, String.class);
 	}

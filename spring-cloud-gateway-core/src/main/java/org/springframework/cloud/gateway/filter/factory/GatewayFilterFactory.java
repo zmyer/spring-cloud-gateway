@@ -28,37 +28,38 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 @FunctionalInterface
 public interface GatewayFilterFactory<C> extends ShortcutConfigurable, Configurable<C> {
 
-	String NAME_KEY = "name";
-	String VALUE_KEY = "value";
+    String NAME_KEY = "name";
+    String VALUE_KEY = "value";
 
-	// useful for javadsl
-	default GatewayFilter apply(Consumer<C> consumer) {
-		C config = newConfig();
-		consumer.accept(config);
-		return apply(config);
-	}
+    // useful for javadsl
+    default GatewayFilter apply(Consumer<C> consumer) {
+        C config = newConfig();
+        consumer.accept(config);
+        return apply(config);
+    }
 
-	default Class<C> getConfigClass() {
-		throw new UnsupportedOperationException("getConfigClass() not implemented");
-	}
+    default Class<C> getConfigClass() {
+        throw new UnsupportedOperationException("getConfigClass() not implemented");
+    }
 
-	@Override
-	default C newConfig() {
-		throw new UnsupportedOperationException("newConfig() not implemented");
-	}
+    @Override
+    default C newConfig() {
+        throw new UnsupportedOperationException("newConfig() not implemented");
+    }
 
-	GatewayFilter apply(C config);
+    GatewayFilter apply(C config);
 
-	default String name() {
-		//TODO: deal with proxys
-		return NameUtils.normalizeFilterFactoryName(getClass());
-	}
+    default String name() {
+        //TODO: deal with proxys
+        return NameUtils.normalizeFilterFactoryName(getClass());
+    }
 
-	@Deprecated
-	default ServerHttpRequest.Builder mutate(ServerHttpRequest request) {
-		return request.mutate();
-	}
+    @Deprecated
+    default ServerHttpRequest.Builder mutate(ServerHttpRequest request) {
+        return request.mutate();
+    }
 }

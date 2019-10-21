@@ -27,61 +27,64 @@ import java.util.List;
 /**
  * @author Vitaliy Pavlyuk
  */
-public class RewriteResponseHeaderGatewayFilterFactory extends AbstractGatewayFilterFactory<RewriteResponseHeaderGatewayFilterFactory.Config> {
+// TODO: 2019/01/24 by zmyer
+public class RewriteResponseHeaderGatewayFilterFactory
+        extends AbstractGatewayFilterFactory<RewriteResponseHeaderGatewayFilterFactory.Config> {
 
-	public static final String REGEXP_KEY = "regexp";
-	public static final String REPLACEMENT_KEY = "replacement";
+    public static final String REGEXP_KEY = "regexp";
+    public static final String REPLACEMENT_KEY = "replacement";
 
-	public RewriteResponseHeaderGatewayFilterFactory() {
-		super(Config.class);
-	}
+    public RewriteResponseHeaderGatewayFilterFactory() {
+        super(Config.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(NAME_KEY, REGEXP_KEY, REPLACEMENT_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(NAME_KEY, REGEXP_KEY, REPLACEMENT_KEY);
+    }
 
-	@Override
-	public GatewayFilter apply(Config config) {
-		return (exchange, chain) -> chain.filter(exchange).then(Mono.fromRunnable(() -> {
-			rewriteHeader(exchange, config);
-		}));
-	}
+    @Override
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> chain.filter(exchange).then(Mono.fromRunnable(() -> {
+            rewriteHeader(exchange, config);
+        }));
+    }
 
-	protected void rewriteHeader(ServerWebExchange exchange, Config config) {
-		final String name = config.getName();
-		final String value = exchange.getResponse().getHeaders().getFirst(name);
-		if (value == null) {
-			return;
-		}
-		final String newValue = rewrite(value, config.getRegexp(), config.getReplacement());
-		exchange.getResponse().getHeaders().set(name, newValue);
-	}
+    protected void rewriteHeader(ServerWebExchange exchange, Config config) {
+        final String name = config.getName();
+        final String value = exchange.getResponse().getHeaders().getFirst(name);
+        if (value == null) {
+            return;
+        }
+        final String newValue = rewrite(value, config.getRegexp(), config.getReplacement());
+        exchange.getResponse().getHeaders().set(name, newValue);
+    }
 
-	String rewrite(String value, String regexp, String replacement) {
-		return value.replaceAll(regexp, replacement.replace("$\\", "$"));
-	}
+    String rewrite(String value, String regexp, String replacement) {
+        return value.replaceAll(regexp, replacement.replace("$\\", "$"));
+    }
 
-	public static class Config extends AbstractGatewayFilterFactory.NameConfig {
-		private String regexp;
-		private String replacement;
+    // TODO: 2019/01/24 by zmyer
+    public static class Config extends AbstractGatewayFilterFactory.NameConfig {
+        private String regexp;
+        private String replacement;
 
-		public String getRegexp() {
-			return regexp;
-		}
+        public String getRegexp() {
+            return regexp;
+        }
 
-		public Config setRegexp(String regexp) {
-			this.regexp = regexp;
-			return this;
-		}
+        public Config setRegexp(String regexp) {
+            this.regexp = regexp;
+            return this;
+        }
 
-		public String getReplacement() {
-			return replacement;
-		}
+        public String getReplacement() {
+            return replacement;
+        }
 
-		public Config setReplacement(String replacement) {
-			this.replacement = replacement;
-			return this;
-		}
-	}
+        public Config setReplacement(String replacement) {
+            this.replacement = replacement;
+            return this;
+        }
+    }
 }

@@ -23,16 +23,17 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class SetRequestHeaderGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
-	@Override
-	public GatewayFilter apply(NameValueConfig config) {
-		return (exchange, chain) -> {
-			ServerHttpRequest request = exchange.getRequest().mutate()
-					.headers(httpHeaders -> httpHeaders.set(config.name, config.value))
-					.build();
+    @Override
+    public GatewayFilter apply(NameValueConfig config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest().mutate()
+                    .headers(httpHeaders -> httpHeaders.set(config.name, config.value))
+                    .build();
 
-			return chain.filter(exchange.mutate().request(request).build());
-		};
-	}
+            return chain.filter(exchange.mutate().request(request).build());
+        };
+    }
 }

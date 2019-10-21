@@ -52,6 +52,7 @@ import reactor.core.publisher.Mono;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 @RestControllerEndpoint(id = "gateway")
 public class GatewayControllerEndpoint implements ApplicationEventPublisherAware {
 
@@ -83,7 +84,7 @@ public class GatewayControllerEndpoint implements ApplicationEventPublisherAware
 
 	@PostMapping("/refresh")
 	public Mono<Void> refresh() {
-	    this.publisher.publishEvent(new RefreshRoutesEvent(this));
+		this.publisher.publishEvent(new RefreshRoutesEvent(this));
 		return Mono.empty();
 	}
 
@@ -104,7 +105,7 @@ public class GatewayControllerEndpoint implements ApplicationEventPublisherAware
 	private HashMap<String, Object> putItem(HashMap<String, Object> map, Object o) {
 		Integer order = null;
 		if (o instanceof Ordered) {
-			order = ((Ordered)o).getOrder();
+			order = ((Ordered) o).getOrder();
 		}
 		//filters.put(o.getClass().getName(), order);
 		map.put(o.toString(), order);
@@ -154,18 +155,18 @@ public class GatewayControllerEndpoint implements ApplicationEventPublisherAware
 		});
 	}
 
-/*
-http POST :8080/admin/gateway/routes/apiaddreqhead uri=http://httpbin.org:80 predicates:='["Host=**.apiaddrequestheader.org", "Path=/headers"]' filters:='["AddRequestHeader=X-Request-ApiFoo, ApiBar"]'
-*/
+	/*
+    http POST :8080/admin/gateway/routes/apiaddreqhead uri=http://httpbin.org:80 predicates:='["Host=**.apiaddrequestheader.org", "Path=/headers"]' filters:='["AddRequestHeader=X-Request-ApiFoo, ApiBar"]'
+    */
 	@PostMapping("/routes/{id}")
 	@SuppressWarnings("unchecked")
 	public Mono<ResponseEntity<Void>> save(@PathVariable String id, @RequestBody Mono<RouteDefinition> route) {
-		return this.routeDefinitionWriter.save(route.map(r ->  {
+		return this.routeDefinitionWriter.save(route.map(r -> {
 			r.setId(id);
 			log.debug("Saving route: " + route);
 			return r;
 		})).then(Mono.defer(() ->
-			Mono.just(ResponseEntity.created(URI.create("/routes/"+id)).build())
+				Mono.just(ResponseEntity.created(URI.create("/routes/" + id)).build())
 		));
 	}
 

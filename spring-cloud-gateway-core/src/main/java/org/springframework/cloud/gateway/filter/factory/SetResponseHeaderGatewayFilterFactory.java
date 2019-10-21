@@ -24,12 +24,13 @@ import reactor.core.publisher.Mono;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class SetResponseHeaderGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
-	@Override
-	public GatewayFilter apply(NameValueConfig config) {
-		return (exchange, chain) -> chain.filter(exchange).then(Mono.fromRunnable(() -> {
-			exchange.getResponse().getHeaders().set(config.name, config.value);
-		}));
-	}
+    @Override
+    public GatewayFilter apply(NameValueConfig config) {
+        return (exchange, chain) -> chain.filter(exchange).then(Mono.fromRunnable(() -> {
+            exchange.getResponse().getHeaders().set(config.name, config.value);
+        }));
+    }
 }

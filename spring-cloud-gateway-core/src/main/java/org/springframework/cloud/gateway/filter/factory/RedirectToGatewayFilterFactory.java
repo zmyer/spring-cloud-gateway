@@ -35,69 +35,71 @@ import reactor.core.publisher.Mono;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class RedirectToGatewayFilterFactory extends AbstractGatewayFilterFactory<RedirectToGatewayFilterFactory.Config> {
 
-	public static final String STATUS_KEY = "status";
-	public static final String URL_KEY = "url";
+    public static final String STATUS_KEY = "status";
+    public static final String URL_KEY = "url";
 
-	public RedirectToGatewayFilterFactory() {
-		super(Config.class);
-	}
+    public RedirectToGatewayFilterFactory() {
+        super(Config.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(STATUS_KEY, URL_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(STATUS_KEY, URL_KEY);
+    }
 
-	@Override
-	public GatewayFilter apply(Config config) {
-		return apply(config.status, config.url);
-	}
+    @Override
+    public GatewayFilter apply(Config config) {
+        return apply(config.status, config.url);
+    }
 
-	public GatewayFilter apply(String statusString, String urlString) {
-		HttpStatusHolder httpStatus = HttpStatusHolder.parse(statusString);
-		Assert.isTrue(httpStatus.is3xxRedirection(), "status must be a 3xx code, but was " + statusString);
-		final URI url = URI.create(urlString);
-		return apply(httpStatus, url);
-	}
+    public GatewayFilter apply(String statusString, String urlString) {
+        HttpStatusHolder httpStatus = HttpStatusHolder.parse(statusString);
+        Assert.isTrue(httpStatus.is3xxRedirection(), "status must be a 3xx code, but was " + statusString);
+        final URI url = URI.create(urlString);
+        return apply(httpStatus, url);
+    }
 
-	public GatewayFilter apply(HttpStatus httpStatus, URI uri) {
-		return apply(new HttpStatusHolder(httpStatus, null), uri);
-	}
+    public GatewayFilter apply(HttpStatus httpStatus, URI uri) {
+        return apply(new HttpStatusHolder(httpStatus, null), uri);
+    }
 
-	public GatewayFilter apply(HttpStatusHolder httpStatus, URI uri) {
-		return (exchange, chain) ->
-			chain.filter(exchange).then(Mono.defer(() -> {
-				if (!exchange.getResponse().isCommitted()) {
-					setResponseStatus(exchange, httpStatus);
+    public GatewayFilter apply(HttpStatusHolder httpStatus, URI uri) {
+        return (exchange, chain) ->
+                chain.filter(exchange).then(Mono.defer(() -> {
+                    if (!exchange.getResponse().isCommitted()) {
+                        setResponseStatus(exchange, httpStatus);
 
-					final ServerHttpResponse response = exchange.getResponse();
-					response.getHeaders().set(HttpHeaders.LOCATION, uri.toString());
-					return response.setComplete();
-				}
-				return Mono.empty();
-			}));
-	}
+                        final ServerHttpResponse response = exchange.getResponse();
+                        response.getHeaders().set(HttpHeaders.LOCATION, uri.toString());
+                        return response.setComplete();
+                    }
+                    return Mono.empty();
+                }));
+    }
 
-	public static class Config {
-		String status;
-		String url;
+    // TODO: 2019/01/24 by zmyer
+    public static class Config {
+        String status;
+        String url;
 
-		public String getStatus() {
-			return status;
-		}
+        public String getStatus() {
+            return status;
+        }
 
-		public void setStatus(String status) {
-			this.status = status;
-		}
+        public void setStatus(String status) {
+            this.status = status;
+        }
 
-		public String getUrl() {
-			return url;
-		}
+        public String getUrl() {
+            return url;
+        }
 
-		public void setUrl(String url) {
-			this.url = url;
-		}
-	}
+        public void setUrl(String url) {
+            this.url = url;
+        }
+    }
 
 }

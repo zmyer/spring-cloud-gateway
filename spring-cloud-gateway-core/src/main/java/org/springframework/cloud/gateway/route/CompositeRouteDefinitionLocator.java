@@ -22,16 +22,17 @@ import reactor.core.publisher.Flux;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 public class CompositeRouteDefinitionLocator implements RouteDefinitionLocator {
 
-	private final Flux<RouteDefinitionLocator> delegates;
+    private final Flux<RouteDefinitionLocator> delegates;
 
-	public CompositeRouteDefinitionLocator(Flux<RouteDefinitionLocator> delegates) {
-		this.delegates = delegates;
-	}
+    public CompositeRouteDefinitionLocator(Flux<RouteDefinitionLocator> delegates) {
+        this.delegates = delegates;
+    }
 
-	@Override
-	public Flux<RouteDefinition> getRouteDefinitions() {
-		return this.delegates.flatMap(RouteDefinitionLocator::getRouteDefinitions);
-	}
+    @Override
+    public Flux<RouteDefinition> getRouteDefinitions() {
+        return this.delegates.flatMap(RouteDefinitionLocator::getRouteDefinitions);
+    }
 }

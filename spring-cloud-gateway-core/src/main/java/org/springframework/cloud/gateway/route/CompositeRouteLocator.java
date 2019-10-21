@@ -22,16 +22,17 @@ import reactor.core.publisher.Flux;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 public class CompositeRouteLocator implements RouteLocator {
 
-	private final Flux<RouteLocator> delegates;
+    private final Flux<RouteLocator> delegates;
 
-	public CompositeRouteLocator(Flux<RouteLocator> delegates) {
-		this.delegates = delegates;
-	}
+    public CompositeRouteLocator(Flux<RouteLocator> delegates) {
+        this.delegates = delegates;
+    }
 
-	@Override
-	public Flux<Route> getRoutes() {
-		return this.delegates.flatMap(RouteLocator::getRoutes);
-	}
+    @Override
+    public Flux<Route> getRoutes() {
+        return this.delegates.flatMap(RouteLocator::getRoutes);
+    }
 }

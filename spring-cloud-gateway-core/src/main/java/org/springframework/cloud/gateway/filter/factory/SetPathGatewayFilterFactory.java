@@ -33,51 +33,53 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.g
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class SetPathGatewayFilterFactory extends AbstractGatewayFilterFactory<SetPathGatewayFilterFactory.Config> {
 
-	public static final String TEMPLATE_KEY = "template";
+    public static final String TEMPLATE_KEY = "template";
 
-	public SetPathGatewayFilterFactory() {
-		super(Config.class);
-	}
+    public SetPathGatewayFilterFactory() {
+        super(Config.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(TEMPLATE_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(TEMPLATE_KEY);
+    }
 
-	@Override
-	public GatewayFilter apply(Config config) {
-		UriTemplate uriTemplate = new UriTemplate(config.template);
+    @Override
+    public GatewayFilter apply(Config config) {
+        UriTemplate uriTemplate = new UriTemplate(config.template);
 
-		return (exchange, chain) -> {
-			ServerHttpRequest req = exchange.getRequest();
-			addOriginalRequestUrl(exchange, req.getURI());
+        return (exchange, chain) -> {
+            ServerHttpRequest req = exchange.getRequest();
+            addOriginalRequestUrl(exchange, req.getURI());
 
-			Map<String, String> uriVariables = getUriTemplateVariables(exchange);
+            Map<String, String> uriVariables = getUriTemplateVariables(exchange);
 
-			URI uri = uriTemplate.expand(uriVariables);
-			String newPath = uri.getRawPath();
+            URI uri = uriTemplate.expand(uriVariables);
+            String newPath = uri.getRawPath();
 
-			exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, uri);
+            exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, uri);
 
-			ServerHttpRequest request = req.mutate()
-					.path(newPath)
-					.build();
+            ServerHttpRequest request = req.mutate()
+                    .path(newPath)
+                    .build();
 
-			return chain.filter(exchange.mutate().request(request).build());
-		};
-	}
+            return chain.filter(exchange.mutate().request(request).build());
+        };
+    }
 
-	public static class Config {
-		private String template;
+    // TODO: 2019/01/24 by zmyer
+    public static class Config {
+        private String template;
 
-		public String getTemplate() {
-			return template;
-		}
+        public String getTemplate() {
+            return template;
+        }
 
-		public void setTemplate(String template) {
-			this.template = template;
-		}
-	}
+        public void setTemplate(String template) {
+            this.template = template;
+        }
+    }
 }

@@ -49,192 +49,196 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.O
 /**
  * This filter is BETA and may be subject to change in a future release.
  */
+// TODO: 2019/01/24 by zmyer
 public class ModifyResponseBodyGatewayFilterFactory
-		extends AbstractGatewayFilterFactory<ModifyResponseBodyGatewayFilterFactory.Config> {
+        extends AbstractGatewayFilterFactory<ModifyResponseBodyGatewayFilterFactory.Config> {
 
-	private final ServerCodecConfigurer codecConfigurer;
+    private final ServerCodecConfigurer codecConfigurer;
 
-	public ModifyResponseBodyGatewayFilterFactory(ServerCodecConfigurer codecConfigurer) {
-		super(Config.class);
-		this.codecConfigurer = codecConfigurer;
-	}
+    public ModifyResponseBodyGatewayFilterFactory(ServerCodecConfigurer codecConfigurer) {
+        super(Config.class);
+        this.codecConfigurer = codecConfigurer;
+    }
 
-	@Override
-	public GatewayFilter apply(Config config) {
-		return new ModifyResponseGatewayFilter(config);
-	}
+    @Override
+    public GatewayFilter apply(Config config) {
+        return new ModifyResponseGatewayFilter(config);
+    }
 
-	public class ModifyResponseGatewayFilter implements GatewayFilter, Ordered {
-		private final Config config;
+    // TODO: 2019/01/24 by zmyer
+    public class ModifyResponseGatewayFilter implements GatewayFilter, Ordered {
+        private final Config config;
 
-		public ModifyResponseGatewayFilter(Config config) {
-			this.config = config;
-		}
+        public ModifyResponseGatewayFilter(Config config) {
+            this.config = config;
+        }
 
-		@Override
-		@SuppressWarnings("unchecked")
-		public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        @Override
+        @SuppressWarnings("unchecked")
+        public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
-			ServerHttpResponseDecorator responseDecorator = new ServerHttpResponseDecorator(exchange.getResponse()) {
+            ServerHttpResponseDecorator responseDecorator = new ServerHttpResponseDecorator(exchange.getResponse()) {
 
-				@Override
-				public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
+                @Override
+                public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
 
-					Class inClass = config.getInClass();
-					Class outClass = config.getOutClass();
+                    Class inClass = config.getInClass();
+                    Class outClass = config.getOutClass();
 
-					String originalResponseContentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-					HttpHeaders httpHeaders = new HttpHeaders();
-					//explicitly add it in this way instead of 'httpHeaders.setContentType(originalResponseContentType)'
-					//this will prevent exception in case of using non-standard media types like "Content-Type: image"
-					httpHeaders.add(HttpHeaders.CONTENT_TYPE, originalResponseContentType);
-					ResponseAdapter responseAdapter = new ResponseAdapter(body, httpHeaders);
-					DefaultClientResponse clientResponse = new DefaultClientResponse(responseAdapter, ExchangeStrategies.withDefaults());
+                    String originalResponseContentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+                    HttpHeaders httpHeaders = new HttpHeaders();
+                    //explicitly add it in this way instead of 'httpHeaders.setContentType(originalResponseContentType)'
+                    //this will prevent exception in case of using non-standard media types like "Content-Type: image"
+                    httpHeaders.add(HttpHeaders.CONTENT_TYPE, originalResponseContentType);
+                    ResponseAdapter responseAdapter = new ResponseAdapter(body, httpHeaders);
+                    DefaultClientResponse clientResponse = new DefaultClientResponse(responseAdapter,
+                            ExchangeStrategies.withDefaults());
 
-					//TODO: flux or mono
-					Mono modifiedBody = clientResponse.bodyToMono(inClass)
-							.flatMap(originalBody -> config.rewriteFunction.apply(exchange, originalBody));
+                    //TODO: flux or mono
+                    Mono modifiedBody = clientResponse.bodyToMono(inClass)
+                            .flatMap(originalBody -> config.rewriteFunction.apply(exchange, originalBody));
 
-					BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, outClass);
-					CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, exchange.getResponse().getHeaders());
-					return bodyInserter.insert(outputMessage, new BodyInserterContext())
-							.then(Mono.defer(() -> {
-								Flux<DataBuffer> messageBody = outputMessage.getBody();
-								HttpHeaders headers = getDelegate().getHeaders();
-								if (!headers.containsKey(HttpHeaders.TRANSFER_ENCODING)) {
-									messageBody = messageBody.doOnNext(data -> headers.setContentLength(data.readableByteCount()));
-								}
-								//TODO: use isStreamingMediaType?
-								return getDelegate().writeWith(messageBody);
-							}));
-				}
+                    BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, outClass);
+                    CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, exchange.getResponse().getHeaders());
+                    return bodyInserter.insert(outputMessage, new BodyInserterContext())
+                            .then(Mono.defer(() -> {
+                                Flux<DataBuffer> messageBody = outputMessage.getBody();
+                                HttpHeaders headers = getDelegate().getHeaders();
+                                if (!headers.containsKey(HttpHeaders.TRANSFER_ENCODING)) {
+                                    messageBody = messageBody.doOnNext(data -> headers.setContentLength(data.readableByteCount()));
+                                }
+                                //TODO: use isStreamingMediaType?
+                                return getDelegate().writeWith(messageBody);
+                            }));
+                }
 
-				@Override
-				public Mono<Void> writeAndFlushWith(Publisher<? extends Publisher<? extends DataBuffer>> body) {
-					return writeWith(Flux.from(body)
-							.flatMapSequential(p -> p));
-				}
-			};
+                @Override
+                public Mono<Void> writeAndFlushWith(Publisher<? extends Publisher<? extends DataBuffer>> body) {
+                    return writeWith(Flux.from(body).flatMapSequential(p -> p));
+                }
+            };
 
-			return chain.filter(exchange.mutate().response(responseDecorator).build());
-		}
+            return chain.filter(exchange.mutate().response(responseDecorator).build());
+        }
 
-		@Override
-		public int getOrder() {
-			return NettyWriteResponseFilter.WRITE_RESPONSE_FILTER_ORDER - 1;
-		}
+        @Override
+        public int getOrder() {
+            return NettyWriteResponseFilter.WRITE_RESPONSE_FILTER_ORDER - 1;
+        }
 
-	}
+    }
 
-	public class ResponseAdapter implements ClientHttpResponse {
+    // TODO: 2019/01/24 by zmyer
+    public class ResponseAdapter implements ClientHttpResponse {
 
-		private final Flux<DataBuffer> flux;
-		private final HttpHeaders headers;
+        private final Flux<DataBuffer> flux;
+        private final HttpHeaders headers;
 
-		public ResponseAdapter(Publisher<? extends DataBuffer> body, HttpHeaders headers) {
-			this.headers = headers;
-			if (body instanceof Flux) {
-				flux = (Flux) body;
-			} else {
-				flux = ((Mono)body).flux();
-			}
-		}
+        public ResponseAdapter(Publisher<? extends DataBuffer> body, HttpHeaders headers) {
+            this.headers = headers;
+            if (body instanceof Flux) {
+                flux = (Flux) body;
+            } else {
+                flux = ((Mono) body).flux();
+            }
+        }
 
-		@Override
-		public Flux<DataBuffer> getBody() {
-			return flux;
-		}
+        @Override
+        public Flux<DataBuffer> getBody() {
+            return flux;
+        }
 
-		@Override
-		public HttpHeaders getHeaders() {
-			return headers;
-		}
+        @Override
+        public HttpHeaders getHeaders() {
+            return headers;
+        }
 
-		@Override
-		public HttpStatus getStatusCode() {
-			return null;
-		}
+        @Override
+        public HttpStatus getStatusCode() {
+            return null;
+        }
 
-		@Override
-		public int getRawStatusCode() {
-			return 0;
-		}
+        @Override
+        public int getRawStatusCode() {
+            return 0;
+        }
 
-		@Override
-		public MultiValueMap<String, ResponseCookie> getCookies() {
-			return null;
-		}
-	}
+        @Override
+        public MultiValueMap<String, ResponseCookie> getCookies() {
+            return null;
+        }
+    }
 
-	public static class Config {
-		private Class inClass;
-		private Class outClass;
-		private Map<String, Object> inHints;
-		private Map<String, Object> outHints;
-		private String newContentType;
+    // TODO: 2019/01/24 by zmyer
+    public static class Config {
+        private Class inClass;
+        private Class outClass;
+        private Map<String, Object> inHints;
+        private Map<String, Object> outHints;
+        private String newContentType;
 
-		private RewriteFunction rewriteFunction;
+        private RewriteFunction rewriteFunction;
 
-		public Class getInClass() {
-			return inClass;
-		}
+        public Class getInClass() {
+            return inClass;
+        }
 
-		public Config setInClass(Class inClass) {
-			this.inClass = inClass;
-			return this;
-		}
+        public Config setInClass(Class inClass) {
+            this.inClass = inClass;
+            return this;
+        }
 
-		public Class getOutClass() {
-			return outClass;
-		}
+        public Class getOutClass() {
+            return outClass;
+        }
 
-		public Config setOutClass(Class outClass) {
-			this.outClass = outClass;
-			return this;
-		}
+        public Config setOutClass(Class outClass) {
+            this.outClass = outClass;
+            return this;
+        }
 
-		public Map<String, Object> getInHints() {
-			return inHints;
-		}
+        public Map<String, Object> getInHints() {
+            return inHints;
+        }
 
-		public Config setInHints(Map<String, Object> inHints) {
-			this.inHints = inHints;
-			return this;
-		}
+        public Config setInHints(Map<String, Object> inHints) {
+            this.inHints = inHints;
+            return this;
+        }
 
-		public Map<String, Object> getOutHints() {
-			return outHints;
-		}
+        public Map<String, Object> getOutHints() {
+            return outHints;
+        }
 
-		public Config setOutHints(Map<String, Object> outHints) {
-			this.outHints = outHints;
-			return this;
-		}
+        public Config setOutHints(Map<String, Object> outHints) {
+            this.outHints = outHints;
+            return this;
+        }
 
-		public String getNewContentType() {
-			return newContentType;
-		}
+        public String getNewContentType() {
+            return newContentType;
+        }
 
-		public Config setNewContentType(String newContentType) {
-			this.newContentType = newContentType;
-			return this;
-		}
+        public Config setNewContentType(String newContentType) {
+            this.newContentType = newContentType;
+            return this;
+        }
 
-		public RewriteFunction getRewriteFunction() {
-			return rewriteFunction;
-		}
+        public RewriteFunction getRewriteFunction() {
+            return rewriteFunction;
+        }
 
-		public <T, R> Config setRewriteFunction(Class<T> inClass, Class<R> outClass,
-				RewriteFunction<T, R> rewriteFunction) {
-			setInClass(inClass);
-			setOutClass(outClass);
-			setRewriteFunction(rewriteFunction);
-			return this;
-		}
+        public <T, R> Config setRewriteFunction(Class<T> inClass, Class<R> outClass,
+                                                RewriteFunction<T, R> rewriteFunction) {
+            setInClass(inClass);
+            setOutClass(outClass);
+            setRewriteFunction(rewriteFunction);
+            return this;
+        }
 
-		public Config setRewriteFunction(RewriteFunction rewriteFunction) {
-			this.rewriteFunction = rewriteFunction;
-			return this;
-		}
-	}
+        public Config setRewriteFunction(RewriteFunction rewriteFunction) {
+            this.rewriteFunction = rewriteFunction;
+            return this;
+        }
+    }
 }

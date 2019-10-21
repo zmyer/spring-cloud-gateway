@@ -19,6 +19,7 @@ package org.springframework.cloud.gateway.filter;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.core.Ordered;
 import org.springframework.web.server.ServerWebExchange;
@@ -29,25 +30,27 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.i
 /**
  * Filter to set the path in the request URI if the {@link Route} URI has the scheme
  * <code>forward</code>.
+ *
  * @author Ryan Baxter
  */
-public class ForwardPathFilter implements GlobalFilter, Ordered{
-	@Override
-	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-		Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
-		URI routeUri = route.getUri();
-		String scheme = routeUri.getScheme();
-		if (isAlreadyRouted(exchange) || !"forward".equals(scheme)) {
-			return chain.filter(exchange);
-		}
-		exchange = exchange.mutate().request(
-				exchange.getRequest().mutate().path(routeUri.getPath()).build())
-				.build();
-		return chain.filter(exchange);
-	}
+// TODO: 2019/01/25 by zmyer
+public class ForwardPathFilter implements GlobalFilter, Ordered {
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
+        URI routeUri = route.getUri();
+        String scheme = routeUri.getScheme();
+        if (isAlreadyRouted(exchange) || !"forward".equals(scheme)) {
+            return chain.filter(exchange);
+        }
+        exchange = exchange.mutate().request(
+                exchange.getRequest().mutate().path(routeUri.getPath()).build())
+                .build();
+        return chain.filter(exchange);
+    }
 
-	@Override
-	public int getOrder() {
-		return 0;
-	}
+    @Override
+    public int getOrder() {
+        return 0;
+    }
 }

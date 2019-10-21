@@ -19,6 +19,7 @@ package org.springframework.cloud.gateway.filter;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -57,6 +58,7 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.s
  * @author Spencer Gibb
  * @author Biju Kunjummen
  */
+// TODO: 2019/01/26 by zmyer
 public class NettyRoutingFilter implements GlobalFilter, Ordered {
 
 	private final HttpClient httpClient;
@@ -88,11 +90,10 @@ public class NettyRoutingFilter implements GlobalFilter, Ordered {
 
 		ServerHttpRequest request = exchange.getRequest();
 
-		final HttpMethod method = HttpMethod.valueOf(request.getMethod().toString());
+		final HttpMethod method = HttpMethod.valueOf(Objects.requireNonNull(request.getMethod()).toString());
 		final String url = requestUrl.toString();
 
-		HttpHeaders filtered = filterRequest(this.headersFilters.getIfAvailable(),
-				exchange);
+		HttpHeaders filtered = filterRequest(this.headersFilters.getIfAvailable(), exchange);
 
 		final DefaultHttpHeaders httpHeaders = new DefaultHttpHeaders();
 		filtered.forEach(httpHeaders::set);
@@ -115,8 +116,7 @@ public class NettyRoutingFilter implements GlobalFilter, Ordered {
 					}
 					return nettyOutbound
 							.options(NettyPipeline.SendOptions::flushOnEach)
-							.send(request.getBody().map(dataBuffer ->
-									((NettyDataBuffer) dataBuffer).getNativeBuffer()));
+							.send(request.getBody().map(dataBuffer -> ((NettyDataBuffer) dataBuffer).getNativeBuffer()));
 				}).responseConnection((res, connection) -> {
 					ServerHttpResponse response = exchange.getResponse();
 					// put headers and status so filters can modify the response
@@ -132,7 +132,7 @@ public class NettyRoutingFilter implements GlobalFilter, Ordered {
 					HttpHeaders filteredResponseHeaders = HttpHeadersFilter.filter(
 							this.headersFilters.getIfAvailable(), headers, exchange, Type.RESPONSE);
 
-					if(!filteredResponseHeaders.containsKey(HttpHeaders.TRANSFER_ENCODING) &&
+					if (!filteredResponseHeaders.containsKey(HttpHeaders.TRANSFER_ENCODING) &&
 							filteredResponseHeaders.containsKey(HttpHeaders.CONTENT_LENGTH)) {
 						//It is not valid to have both the transfer-encoding header and the content-length header
 						//remove the transfer-encoding header in the response if the content-length header is presen
@@ -160,7 +160,8 @@ public class NettyRoutingFilter implements GlobalFilter, Ordered {
 		if (properties.getResponseTimeout() != null) {
 			responseFlux = responseFlux.timeout(properties.getResponseTimeout(),
 					Mono.error(new TimeoutException("Response took longer than timeout: " +
-							properties.getResponseTimeout()))).onErrorMap(TimeoutException.class, th -> new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, null, th));
+							properties.getResponseTimeout()))).onErrorMap(TimeoutException.class,
+					th -> new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, null, th));
 		}
 
 		return responseFlux.then(chain.filter(exchange));

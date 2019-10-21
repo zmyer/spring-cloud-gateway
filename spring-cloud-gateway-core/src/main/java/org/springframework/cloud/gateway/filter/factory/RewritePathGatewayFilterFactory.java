@@ -29,59 +29,62 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.a
 /**
  * @author Spencer Gibb
  */
-public class RewritePathGatewayFilterFactory extends AbstractGatewayFilterFactory<RewritePathGatewayFilterFactory.Config> {
+// TODO: 2019/01/24 by zmyer
+public class RewritePathGatewayFilterFactory extends
+        AbstractGatewayFilterFactory<RewritePathGatewayFilterFactory.Config> {
 
-	public static final String REGEXP_KEY = "regexp";
-	public static final String REPLACEMENT_KEY = "replacement";
+    public static final String REGEXP_KEY = "regexp";
+    public static final String REPLACEMENT_KEY = "replacement";
 
-	public RewritePathGatewayFilterFactory() {
-		super(Config.class);
-	}
+    public RewritePathGatewayFilterFactory() {
+        super(Config.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(REGEXP_KEY, REPLACEMENT_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(REGEXP_KEY, REPLACEMENT_KEY);
+    }
 
-	@Override
-	public GatewayFilter apply(Config config) {
-		String replacement = config.replacement.replace("$\\", "$");
-		return (exchange, chain) -> {
-			ServerHttpRequest req = exchange.getRequest();
-			addOriginalRequestUrl(exchange, req.getURI());
-			String path = req.getURI().getRawPath();
-			String newPath = path.replaceAll(config.regexp, replacement);
+    @Override
+    public GatewayFilter apply(Config config) {
+        String replacement = config.replacement.replace("$\\", "$");
+        return (exchange, chain) -> {
+            ServerHttpRequest req = exchange.getRequest();
+            addOriginalRequestUrl(exchange, req.getURI());
+            String path = req.getURI().getRawPath();
+            String newPath = path.replaceAll(config.regexp, replacement);
 
-			ServerHttpRequest request = req.mutate()
-					.path(newPath)
-					.build();
+            ServerHttpRequest request = req.mutate()
+                    .path(newPath)
+                    .build();
 
-			exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, request.getURI());
+            exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, request.getURI());
 
-			return chain.filter(exchange.mutate().request(request).build());
-		};
-	}
+            return chain.filter(exchange.mutate().request(request).build());
+        };
+    }
 
-	public static class Config {
-		private String regexp;
-		private String replacement;
+    // TODO: 2019/01/24 by zmyer
+    public static class Config {
+        private String regexp;
+        private String replacement;
 
-		public String getRegexp() {
-			return regexp;
-		}
+        public String getRegexp() {
+            return regexp;
+        }
 
-		public Config setRegexp(String regexp) {
-			this.regexp = regexp;
-			return this;
-		}
+        public Config setRegexp(String regexp) {
+            this.regexp = regexp;
+            return this;
+        }
 
-		public String getReplacement() {
-			return replacement;
-		}
+        public String getReplacement() {
+            return replacement;
+        }
 
-		public Config setReplacement(String replacement) {
-			this.replacement = replacement;
-			return this;
-		}
-	}
+        public Config setReplacement(String replacement) {
+            this.replacement = replacement;
+            return this;
+        }
+    }
 }

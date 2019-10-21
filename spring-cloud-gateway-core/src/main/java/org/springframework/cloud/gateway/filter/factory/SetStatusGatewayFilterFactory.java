@@ -30,51 +30,52 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.s
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmyer
 public class SetStatusGatewayFilterFactory extends AbstractGatewayFilterFactory<SetStatusGatewayFilterFactory.Config> {
 
-	public static final String STATUS_KEY = "status";
+    public static final String STATUS_KEY = "status";
 
-	public SetStatusGatewayFilterFactory() {
-		super(Config.class);
-	}
+    public SetStatusGatewayFilterFactory() {
+        super(Config.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList(STATUS_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Arrays.asList(STATUS_KEY);
+    }
 
-	@Override
-	public GatewayFilter apply(Config config) {
-		HttpStatusHolder statusHolder = HttpStatusHolder.parse(config.status);
-		return (exchange, chain) -> {
+    @Override
+    public GatewayFilter apply(Config config) {
+        HttpStatusHolder statusHolder = HttpStatusHolder.parse(config.status);
+        return (exchange, chain) -> {
 
-			// option 1 (runs in filter order)
+            // option 1 (runs in filter order)
 			/*exchange.getResponse().beforeCommit(() -> {
 				exchange.getResponse().setStatusCode(finalStatus);
 				return Mono.empty();
 			});
 			return chain.filter(exchange);*/
 
-			// option 2 (runs in reverse filter order)
-			return chain.filter(exchange).then(Mono.fromRunnable(() -> {
-				// check not really needed, since it is guarded in setStatusCode,
-				// but it's a good example
-				setResponseStatus(exchange, statusHolder);
-			}));
-		};
-	}
+            // option 2 (runs in reverse filter order)
+            return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+                // check not really needed, since it is guarded in setStatusCode,
+                // but it's a good example
+                setResponseStatus(exchange, statusHolder);
+            }));
+        };
+    }
 
-	public static class Config {
-		//TODO: relaxed HttpStatus converter
-		private String status;
+    public static class Config {
+        //TODO: relaxed HttpStatus converter
+        private String status;
 
-		public String getStatus() {
-			return status;
-		}
+        public String getStatus() {
+            return status;
+        }
 
-		public void setStatus(String status) {
-			this.status = status;
-		}
-	}
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
 
 }

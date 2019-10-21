@@ -22,14 +22,15 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/24 by zmye
 public class AddResponseHeaderGatewayFilterFactory extends AbstractNameValueGatewayFilterFactory {
 
-	@Override
-	public GatewayFilter apply(NameValueConfig config) {
-		return (exchange, chain) -> {
-			exchange.getResponse().getHeaders().add(config.getName(), config.getValue());
+    @Override
+    public GatewayFilter apply(NameValueConfig config) {
+        return (exchange, chain) -> {
+            exchange.getResponse().getHeaders().add(config.getName(), config.getValue());
 
-			return chain.filter(exchange);
-		};
-	}
+            return chain.filter(exchange);
+        };
+    }
 }

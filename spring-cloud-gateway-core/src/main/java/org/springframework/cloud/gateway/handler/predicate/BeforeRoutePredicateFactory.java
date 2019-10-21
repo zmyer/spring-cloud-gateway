@@ -29,35 +29,35 @@ import org.springframework.web.server.ServerWebExchange;
  */
 public class BeforeRoutePredicateFactory extends AbstractRoutePredicateFactory<BeforeRoutePredicateFactory.Config> {
 
-	public static final String DATETIME_KEY = "datetime";
+    public static final String DATETIME_KEY = "datetime";
 
-	public BeforeRoutePredicateFactory() {
-		super(Config.class);
-	}
+    public BeforeRoutePredicateFactory() {
+        super(Config.class);
+    }
 
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Collections.singletonList(DATETIME_KEY);
-	}
+    @Override
+    public List<String> shortcutFieldOrder() {
+        return Collections.singletonList(DATETIME_KEY);
+    }
 
-	@Override
-	public Predicate<ServerWebExchange> apply(Config config) {
-		ZonedDateTime datetime = config.getDatetime();
-		return exchange -> {
-			final ZonedDateTime now = ZonedDateTime.now();
-			return now.isBefore(datetime);
-		};
-	}
+    @Override
+    public Predicate<ServerWebExchange> apply(Config config) {
+        ZonedDateTime datetime = config.getDatetime();
+        return exchange -> {
+            final ZonedDateTime now = ZonedDateTime.now();
+            return now.isBefore(datetime);
+        };
+    }
 
-	public static class Config {
-		private ZonedDateTime datetime;
+    public static class Config {
+        private ZonedDateTime datetime;
 
-		public ZonedDateTime getDatetime() {
-			return datetime;
-		}
+        public ZonedDateTime getDatetime() {
+            return datetime;
+        }
 
-		public void setDatetime(ZonedDateTime datetime) {
-			this.datetime = datetime;
-		}
-	}
+        public void setDatetime(ZonedDateTime datetime) {
+            this.datetime = datetime;
+        }
+    }
 }

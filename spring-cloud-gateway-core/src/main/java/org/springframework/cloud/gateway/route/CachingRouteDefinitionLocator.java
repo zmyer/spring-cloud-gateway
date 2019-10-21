@@ -30,6 +30,7 @@ import org.springframework.cloud.gateway.event.RefreshRoutesEvent;
 /**
  * @author Spencer Gibb
  */
+// TODO: 2019/01/25 by zmyer
 public class CachingRouteDefinitionLocator implements RouteDefinitionLocator, ApplicationListener<RefreshRoutesEvent> {
 
 	private final RouteDefinitionLocator delegate;

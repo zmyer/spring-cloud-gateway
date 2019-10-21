@@ -1,10 +1,13 @@
 test:
   hostport: httpbin.org:80
-#  hostport: localhost:5000
-#  uri: http://${test.hostport}
+  #  hostport: localhost:5000
+  #  uri: http://${test.hostport}
   uri: lb://testservice
 
 spring:
+  profiles:
+    include: logging
+
   cloud:
     gateway:
       globalcors:
@@ -66,6 +69,27 @@ spring:
         - AddResponseHeader=X-Request-Foo, Bar
 
       # =====================================
+      - id: dedupe_response_header_test
+        uri: ${test.uri}
+        predicates:
+          - Host=**.deduperesponseheader.org
+          - Path=/headers
+        filters:
+          - AddResponseHeader=Access-Control-Allow-Credentials, true
+          - AddResponseHeader=Access-Control-Allow-Credentials, false
+          - AddResponseHeader=Access-Control-Allow-Origin, https://musk.mars
+          - AddResponseHeader=Access-Control-Allow-Origin, *
+          - AddResponseHeader=Scout-Cookie, Thin Mints
+          - AddResponseHeader=Scout-Cookie, S'mores
+          - AddResponseHeader=Next-Week-Lottery-Numbers, 4
+          - AddResponseHeader=Next-Week-Lottery-Numbers, 2
+          - AddResponseHeader=Next-Week-Lottery-Numbers, 2
+          - AddResponseHeader=Next-Week-Lottery-Numbers, 42
+          - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin, RETAIN_FIRST
+          - DedupeResponseHeader=Scout-Cookie, RETAIN_LAST
+          - DedupeResponseHeader=Next-Week-Lottery-Numbers, RETAIN_UNIQUE
+
+        # =====================================
       - id: rewrite_response_header_test
         uri: ${test.uri}
         predicates:
@@ -74,6 +98,16 @@ spring:
         filters:
         - AddResponseHeader=X-Request-Foo, /42?user=ford&password=omg!what&flag=true
         - RewriteResponseHeader=X-Request-Foo, password=[^&]+, password=***
+
+      # =====================================
+      - id: rewrite_location_response_header_test
+        uri: ${test.uri}
+        predicates:
+        - Host=**.rewritelocationresponseheader.org
+        - Path=/headers
+        filters:
+        - AddResponseHeader=Location, https://backend.org:443/v1/some/object/id
+        - RewriteLocationResponseHeader
 
       # =====================================
       - id: forward_test
@@ -85,9 +119,9 @@ spring:
       - id: host_backwards_compatible_test
         uri: ${test.uri}
         predicates:
-          - name: Host
-            args:
-              pattern: '**.hostpatternarg.org'
+        - name: Host
+          args:
+            pattern: '**.hostpatternarg.org'
 
       # =====================================
       - id: host_backwards_compatible_shortcut_test
@@ -141,7 +175,7 @@ spring:
 
       # =====================================
       - id: load_balancer_client_test
-        uri: lb://myservice
+        uri: lb://testservice
         predicates:
         - Host=**.loadbalancerclient.org
 
@@ -187,10 +221,10 @@ spring:
       - id: path_multi
         uri: ${test.uri}
         predicates:
-          - Host=**.pathmulti.org
-          - Path=/anything/multi1{num},/anything/multi2{num}
+        - Host=**.pathmulti.org
+        - Path=/anything/multi1{num},/anything/multi2{num}
         filters:
-          - SetPath=/anything/multi{num}
+        - SetPath=/anything/multi{num}
 
       # =====================================
       - id: redirect_to_test
@@ -198,7 +232,7 @@ spring:
         predicates:
         - Host=**.redirectto.org
         filters:
-        - RedirectTo=302, http://example.org
+        - RedirectTo=302, https://example.org
 
       # =====================================
       - id: remove_request_header_test
@@ -218,14 +252,6 @@ spring:
         filters:
         - AddResponseHeader=X-Request-Foo, Bar
         - RemoveResponseHeader=X-Request-Foo
-
-      # =====================================
-      - id: retry_test
-        uri: ${test.uri}
-        predicates:
-        - Path=/retry
-        filters:
-        - Retry
 
       # =====================================
       - id: secure_headers_test
@@ -249,9 +275,9 @@ spring:
       - id: set_path_host_test
         uri: ${test.uri}
         predicates:
-          - Host={subdomain}.setpathhost.org
+        - Host={subdomain}.setpathhost.org
         filters:
-          - SetPath=/{subdomain}
+        - SetPath=/{subdomain}
 
       # =====================================
       - id: strip_prefix_test
@@ -269,9 +295,9 @@ spring:
         - Host=**.setreresponseheader.org
         - Path=/headers
         filters:
-        - AddResponseHeader=X-Request-Foo, Bar1
-        - AddResponseHeader=X-Request-Foo, Bar2
-        - SetResponseHeader=X-Request-Foo, Bar
+        - AddResponseHeader=X-Response-Foo, Bar1
+        - AddResponseHeader=X-Response-Foo, Bar2
+        - SetResponseHeader=X-Response-Foo, Bar
 
       # =====================================
       - id: set_status_int_test
@@ -343,20 +369,28 @@ spring:
         - name: Path
           args:
             pattern: /**
+      # =====================================
+      - id: route_with_metadata
+        uri: ${test.uri}
+        order: 10000
+        predicates:
+          - name: Path
+            args:
+              pattern: /route_with_metadata
+        metadata:
+          optionName: "OptionValue"
+          compositeObject:
+              name: "value"
+          iAmNumber: 1
 
 hystrix.command.successcmd.execution.isolation.thread.timeoutInMilliseconds: 5000
-
-logging:
-  level:
-    org.springframework.cloud.gateway: TRACE
-    org.springframework.http.server.reactive: DEBUG
-    org.springframework.web.reactive: DEBUG
-    org.springframework.boot.autoconfigure.web: DEBUG
-    reactor.netty: DEBUG
-    redisratelimiter: DEBUG
 
 eureka:
   client:
     enabled: false
-#  port: 8081
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

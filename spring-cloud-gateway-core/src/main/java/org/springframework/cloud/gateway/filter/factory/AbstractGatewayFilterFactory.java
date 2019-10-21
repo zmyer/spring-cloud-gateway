@@ -1,51 +1,65 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.gateway.filter.factory;
 
 import org.springframework.cloud.gateway.support.AbstractConfigurable;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 
 /**
  * This class is BETA and may be subject to change in a future release.
  *
- * @param <C>
+ * @param <C> {@link AbstractConfigurable} subtype
  */
-// TODO: 2019/01/24 by zmyer
-public abstract class AbstractGatewayFilterFactory<C>
-        extends AbstractConfigurable<C> implements GatewayFilterFactory<C> {
+public abstract class AbstractGatewayFilterFactory<C> extends AbstractConfigurable<C>
+		implements GatewayFilterFactory<C>, ApplicationEventPublisherAware {
 
-    @SuppressWarnings("unchecked")
-    public AbstractGatewayFilterFactory() {
-        super((Class<C>) Object.class);
-    }
+	private ApplicationEventPublisher publisher;
 
-    public AbstractGatewayFilterFactory(Class<C> configClass) {
-        super(configClass);
-    }
+	@SuppressWarnings("unchecked")
+	public AbstractGatewayFilterFactory() {
+		super((Class<C>) Object.class);
+	}
 
-    public static class NameConfig {
-        private String name;
+	public AbstractGatewayFilterFactory(Class<C> configClass) {
+		super(configClass);
+	}
 
-        public String getName() {
-            return name;
-        }
+	protected ApplicationEventPublisher getPublisher() {
+		return this.publisher;
+	}
 
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
+	@Override
+	public void setApplicationEventPublisher(ApplicationEventPublisher publisher) {
+		this.publisher = publisher;
+	}
+
+	public static class NameConfig {
+
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+	}
+
 }

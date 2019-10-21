@@ -1,18 +1,17 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.gateway.filter.factory;
@@ -31,81 +30,102 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.H
 /**
  * @author Olga Maciaszek-Sharma
  */
-// TODO: 2019/01/25 by zmyer
 public class FallbackHeadersGatewayFilterFactory
-        extends AbstractGatewayFilterFactory<FallbackHeadersGatewayFilterFactory.Config> {
+		extends AbstractGatewayFilterFactory<FallbackHeadersGatewayFilterFactory.Config> {
 
-    public FallbackHeadersGatewayFilterFactory() {
-        super(Config.class);
-    }
+	public FallbackHeadersGatewayFilterFactory() {
+		super(Config.class);
+	}
 
-    @Override
-    public List<String> shortcutFieldOrder() {
-        return singletonList(NAME_KEY);
-    }
+	@Override
+	public List<String> shortcutFieldOrder() {
+		return singletonList(NAME_KEY);
+	}
 
-    @Override
-    public GatewayFilter apply(Config config) {
-        return (exchange, chain) -> {
-            ServerWebExchange filteredExchange = ofNullable((Throwable) exchange
-                    .getAttribute(HYSTRIX_EXECUTION_EXCEPTION_ATTR))
-                    .map(executionException -> {
-                        ServerHttpRequest.Builder requestBuilder = exchange.getRequest().mutate();
-                        requestBuilder.header(config.executionExceptionTypeHeaderName, executionException.getClass().getName());
-                        requestBuilder.header(config.executionExceptionMessageHeaderName, executionException.getMessage());
-                        ofNullable(getRootCause(executionException)).ifPresent(rootCause -> {
-                            requestBuilder.header(config.rootCauseExceptionTypeHeaderName, rootCause.getClass().getName());
-                            requestBuilder.header(config.rootCauseExceptionMessageHeaderName, rootCause.getMessage());
-                        });
-                        return exchange.mutate().request(requestBuilder.build()).build();
-                    }).orElse(exchange);
-            return chain.filter(filteredExchange);
-        };
-    }
+	@Override
+	public GatewayFilter apply(Config config) {
+		return (exchange, chain) -> {
+			ServerWebExchange filteredExchange = ofNullable(
+					(Throwable) exchange.getAttribute(HYSTRIX_EXECUTION_EXCEPTION_ATTR))
+							.map(executionException -> {
+								ServerHttpRequest.Builder requestBuilder = exchange
+										.getRequest().mutate();
+								requestBuilder.header(
+										config.executionExceptionTypeHeaderName,
+										executionException.getClass().getName());
+								requestBuilder.header(
+										config.executionExceptionMessageHeaderName,
+										executionException.getMessage());
+								ofNullable(getRootCause(executionException))
+										.ifPresent(rootCause -> {
+											requestBuilder.header(
+													config.rootCauseExceptionTypeHeaderName,
+													rootCause.getClass().getName());
+											requestBuilder.header(
+													config.rootCauseExceptionMessageHeaderName,
+													rootCause.getMessage());
+										});
+								return exchange.mutate().request(requestBuilder.build())
+										.build();
+							}).orElse(exchange);
+			return chain.filter(filteredExchange);
+		};
+	}
 
-    // TODO: 2019/01/25 by zmyer
-    public static class Config {
+	public static class Config {
 
-        private static final String EXECUTION_EXCEPTION_TYPE = "Execution-Exception-Type";
-        private static final String EXECUTION_EXCEPTION_MESSAGE = "Execution-Exception-Message";
-        private static final String ROOT_CAUSE_EXCEPTION_TYPE = "Root-Cause-Exception-Type";
-        private static final String ROOT_CAUSE_EXCEPTION_MESSAGE = "Root-Cause-Exception-Message";
+		private static final String EXECUTION_EXCEPTION_TYPE = "Execution-Exception-Type";
 
-        private String executionExceptionTypeHeaderName = EXECUTION_EXCEPTION_TYPE;
-        private String executionExceptionMessageHeaderName = EXECUTION_EXCEPTION_MESSAGE;
-        private String rootCauseExceptionTypeHeaderName = ROOT_CAUSE_EXCEPTION_TYPE;
-        private String rootCauseExceptionMessageHeaderName = ROOT_CAUSE_EXCEPTION_MESSAGE;
+		private static final String EXECUTION_EXCEPTION_MESSAGE = "Execution-Exception-Message";
 
-        public String getExecutionExceptionTypeHeaderName() {
-            return executionExceptionTypeHeaderName;
-        }
+		private static final String ROOT_CAUSE_EXCEPTION_TYPE = "Root-Cause-Exception-Type";
 
-        public void setExecutionExceptionTypeHeaderName(String executionExceptionTypeHeaderName) {
-            this.executionExceptionTypeHeaderName = executionExceptionTypeHeaderName;
-        }
+		private static final String ROOT_CAUSE_EXCEPTION_MESSAGE = "Root-Cause-Exception-Message";
 
-        public String getExecutionExceptionMessageHeaderName() {
-            return executionExceptionMessageHeaderName;
-        }
+		private String executionExceptionTypeHeaderName = EXECUTION_EXCEPTION_TYPE;
 
-        public void setExecutionExceptionMessageHeaderName(String executionExceptionMessageHeaderName) {
-            this.executionExceptionMessageHeaderName = executionExceptionMessageHeaderName;
-        }
+		private String executionExceptionMessageHeaderName = EXECUTION_EXCEPTION_MESSAGE;
 
-        public String getRootCauseExceptionTypeHeaderName() {
-            return rootCauseExceptionTypeHeaderName;
-        }
+		private String rootCauseExceptionTypeHeaderName = ROOT_CAUSE_EXCEPTION_TYPE;
 
-        public void setRootCauseExceptionTypeHeaderName(String rootCauseExceptionTypeHeaderName) {
-            this.rootCauseExceptionTypeHeaderName = rootCauseExceptionTypeHeaderName;
-        }
+		private String rootCauseExceptionMessageHeaderName = ROOT_CAUSE_EXCEPTION_MESSAGE;
 
-        public String getCauseExceptionMessageHeaderName() {
-            return rootCauseExceptionMessageHeaderName;
-        }
+		public String getExecutionExceptionTypeHeaderName() {
+			return executionExceptionTypeHeaderName;
+		}
 
-        public void setCauseExceptionMessageHeaderName(String causeExceptionMessageHeaderName) {
-            this.rootCauseExceptionMessageHeaderName = causeExceptionMessageHeaderName;
-        }
-    }
+		public void setExecutionExceptionTypeHeaderName(
+				String executionExceptionTypeHeaderName) {
+			this.executionExceptionTypeHeaderName = executionExceptionTypeHeaderName;
+		}
+
+		public String getExecutionExceptionMessageHeaderName() {
+			return executionExceptionMessageHeaderName;
+		}
+
+		public void setExecutionExceptionMessageHeaderName(
+				String executionExceptionMessageHeaderName) {
+			this.executionExceptionMessageHeaderName = executionExceptionMessageHeaderName;
+		}
+
+		public String getRootCauseExceptionTypeHeaderName() {
+			return rootCauseExceptionTypeHeaderName;
+		}
+
+		public void setRootCauseExceptionTypeHeaderName(
+				String rootCauseExceptionTypeHeaderName) {
+			this.rootCauseExceptionTypeHeaderName = rootCauseExceptionTypeHeaderName;
+		}
+
+		public String getCauseExceptionMessageHeaderName() {
+			return rootCauseExceptionMessageHeaderName;
+		}
+
+		public void setCauseExceptionMessageHeaderName(
+				String causeExceptionMessageHeaderName) {
+			this.rootCauseExceptionMessageHeaderName = causeExceptionMessageHeaderName;
+		}
+
+	}
+
 }

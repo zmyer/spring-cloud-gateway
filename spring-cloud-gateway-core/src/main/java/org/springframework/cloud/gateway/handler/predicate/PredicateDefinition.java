@@ -1,18 +1,17 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.gateway.handler.predicate;
@@ -32,71 +31,76 @@ import static org.springframework.util.StringUtils.tokenizeToStringArray;
 /**
  * @author Spencer Gibb
  */
-// TODO: 2019/01/24 by zmyer
 @Validated
 public class PredicateDefinition {
-    @NotNull
-    private String name;
-    private Map<String, String> args = new LinkedHashMap<>();
 
-    public PredicateDefinition() {
-    }
+	@NotNull
+	private String name;
 
-    public PredicateDefinition(String text) {
-        int eqIdx = text.indexOf('=');
-        if (eqIdx <= 0) {
-            throw new ValidationException("Unable to parse PredicateDefinition text '" + text + "'" +
-                    ", must be of the form name=value");
-        }
-        setName(text.substring(0, eqIdx));
+	private Map<String, String> args = new LinkedHashMap<>();
 
-        String[] args = tokenizeToStringArray(text.substring(eqIdx + 1), ",");
+	public PredicateDefinition() {
+	}
 
-        for (int i = 0; i < args.length; i++) {
-            this.args.put(NameUtils.generateName(i), args[i]);
-        }
-    }
+	public PredicateDefinition(String text) {
+		int eqIdx = text.indexOf('=');
+		if (eqIdx <= 0) {
+			throw new ValidationException("Unable to parse PredicateDefinition text '"
+					+ text + "'" + ", must be of the form name=value");
+		}
+		setName(text.substring(0, eqIdx));
 
-    public String getName() {
-        return name;
-    }
+		String[] args = tokenizeToStringArray(text.substring(eqIdx + 1), ",");
 
-    public void setName(String name) {
-        this.name = name;
-    }
+		for (int i = 0; i < args.length; i++) {
+			this.args.put(NameUtils.generateName(i), args[i]);
+		}
+	}
 
-    public Map<String, String> getArgs() {
-        return args;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setArgs(Map<String, String> args) {
-        this.args = args;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void addArg(String key, String value) {
-        this.args.put(key, value);
-    }
+	public Map<String, String> getArgs() {
+		return args;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PredicateDefinition that = (PredicateDefinition) o;
-        return Objects.equals(name, that.name) &&
-                Objects.equals(args, that.args);
-    }
+	public void setArgs(Map<String, String> args) {
+		this.args = args;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, args);
-    }
+	public void addArg(String key, String value) {
+		this.args.put(key, value);
+	}
 
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("PredicateDefinition{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", args=").append(args);
-        sb.append('}');
-        return sb.toString();
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		PredicateDefinition that = (PredicateDefinition) o;
+		return Objects.equals(name, that.name) && Objects.equals(args, that.args);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(name, args);
+	}
+
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder("PredicateDefinition{");
+		sb.append("name='").append(name).append('\'');
+		sb.append(", args=").append(args);
+		sb.append('}');
+		return sb.toString();
+	}
+
 }

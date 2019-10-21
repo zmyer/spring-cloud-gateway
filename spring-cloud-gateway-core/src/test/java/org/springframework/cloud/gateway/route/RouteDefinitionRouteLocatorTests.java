@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.gateway.route;
 
 import java.net.URI;
@@ -19,6 +35,7 @@ import org.springframework.cloud.gateway.handler.predicate.HostRoutePredicateFac
 import org.springframework.cloud.gateway.handler.predicate.PredicateDefinition;
 import org.springframework.cloud.gateway.handler.predicate.RoutePredicateFactory;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,7 +56,7 @@ public class RouteDefinitionRouteLocatorTests {
 		gatewayProperties.setRoutes(Arrays.asList(new RouteDefinition() {
 			{
 				setId("foo");
-				setUri(URI.create("http://foo.example.com"));
+				setUri(URI.create("https://foo.example.com"));
 				setPredicates(
 						Arrays.asList(new PredicateDefinition("Host=*.example.com")));
 				setFilters(Arrays.asList(
@@ -51,16 +68,17 @@ public class RouteDefinitionRouteLocatorTests {
 
 		RouteDefinitionRouteLocator routeDefinitionRouteLocator = new RouteDefinitionRouteLocator(
 				new PropertiesRouteDefinitionLocator(gatewayProperties), predicates,
-				gatewayFilterFactories, gatewayProperties, new DefaultConversionService());
+				gatewayFilterFactories, gatewayProperties,
+				new DefaultConversionService());
 
 		List<Route> routes = routeDefinitionRouteLocator.getRoutes().collectList()
 				.block();
 		List<GatewayFilter> filters = routes.get(0).getFilters();
 		assertThat(filters).hasSize(3);
-		assertThat(getFilterClassName(filters.get(0))).startsWith("RemoveResponseHeader");
-		assertThat(getFilterClassName(filters.get(1))).startsWith("AddResponseHeader");
+		assertThat(getFilterClassName(filters.get(0))).contains("RemoveResponseHeader");
+		assertThat(getFilterClassName(filters.get(1))).contains("AddResponseHeader");
 		assertThat(getFilterClassName(filters.get(2)))
-				.startsWith("RouteDefinitionRouteLocatorTests$TestOrderedGateway");
+				.contains("RouteDefinitionRouteLocatorTests$TestOrderedGateway");
 	}
 
 	private String getFilterClassName(GatewayFilter target) {
@@ -68,15 +86,23 @@ public class RouteDefinitionRouteLocatorTests {
 			return getFilterClassName(((OrderedGatewayFilter) target).getDelegate());
 		}
 		else {
-			return target.getClass().getSimpleName();
+			String simpleName = target.getClass().getSimpleName();
+			if (StringUtils.isEmpty(simpleName)) {
+				// maybe a lambda using new toString methods
+				simpleName = target.toString();
+			}
+			return simpleName;
 		}
 	}
 
 	static class TestOrderedGatewayFilterFactory extends AbstractGatewayFilterFactory {
+
 		@Override
 		public GatewayFilter apply(Object config) {
 			return new OrderedGatewayFilter((exchange, chain) -> chain.filter(exchange),
 					9999);
 		}
+
 	}
+
 }

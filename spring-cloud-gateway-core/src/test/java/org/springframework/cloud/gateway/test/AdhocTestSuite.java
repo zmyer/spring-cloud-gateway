@@ -1,18 +1,17 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.gateway.test;
@@ -25,12 +24,16 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 import org.junit.runners.model.Statement;
 
+import org.springframework.cloud.gateway.filter.GatewayMetricsFilterTests;
+import org.springframework.cloud.gateway.filter.factory.RewriteLocationResponseHeaderGatewayFilterFactoryTests;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assume.assumeThat;
 
 /**
  * To run this suite in an IDE, set env var GATEWAY_ADHOC_ENABLED=true in test runner.
+ *
  * @author Spencer Gibb
  */
 @RunWith(Suite.class)
@@ -61,6 +64,7 @@ import static org.junit.Assume.assumeThat;
 		org.springframework.cloud.gateway.filter.factory.SetPathGatewayFilterFactoryTests.class,
 		org.springframework.cloud.gateway.filter.factory.PrefixPathGatewayFilterFactoryTest.class,
 		org.springframework.cloud.gateway.filter.factory.RewriteResponseHeaderGatewayFilterFactoryUnitTests.class,
+		RewriteLocationResponseHeaderGatewayFilterFactoryTests.class,
 		org.springframework.cloud.gateway.filter.factory.RequestRateLimiterGatewayFilterFactoryTests.class,
 		org.springframework.cloud.gateway.filter.factory.RequestHeaderToRequestUriGatewayFilterFactoryIntegrationTests.class,
 		org.springframework.cloud.gateway.filter.factory.RemoveResponseHeaderGatewayFilterFactoryTests.class,
@@ -82,6 +86,7 @@ import static org.junit.Assume.assumeThat;
 		org.springframework.cloud.gateway.filter.RouteToRequestUrlFilterTests.class,
 		org.springframework.cloud.gateway.filter.headers.ForwardedHeadersFilterTests.class,
 		org.springframework.cloud.gateway.filter.headers.XForwardedHeadersFilterTests.class,
+		org.springframework.cloud.gateway.filter.headers.HttpStatusInResponseHeadersFilterTests.class,
 		org.springframework.cloud.gateway.filter.headers.HttpHeadersFilterMixedTypeTests.class,
 		org.springframework.cloud.gateway.filter.headers.HttpHeadersFilterTests.class,
 		org.springframework.cloud.gateway.filter.headers.NonStandardHeadersInResponseTests.class,
@@ -92,7 +97,7 @@ import static org.junit.Assume.assumeThat;
 		org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiterTests.class,
 		org.springframework.cloud.gateway.filter.LoadBalancerClientFilterTests.class,
 		org.springframework.cloud.gateway.filter.NettyRoutingFilterIntegrationTests.class,
-		org.springframework.cloud.gateway.filter.GatewayMetricFilterTests.class,
+		GatewayMetricsFilterTests.class,
 		org.springframework.cloud.gateway.filter.ForwardRoutingFilterTests.class,
 		org.springframework.cloud.gateway.route.RouteDefinitionRouteLocatorTests.class,
 		org.springframework.cloud.gateway.route.RouteTests.class,
@@ -105,7 +110,8 @@ import static org.junit.Assume.assumeThat;
 		org.springframework.cloud.gateway.actuate.GatewayControllerEndpointTests.class,
 		org.springframework.cloud.gateway.config.GatewayAutoConfigurationTests.class,
 		org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitionLocatorTests.class,
-		org.springframework.cloud.gateway.discovery.GatewayDiscoveryClientAutoConfigurationTests.class,
+		org.springframework.cloud.gateway.discovery.BlockingGatewayDiscoveryClientAutoConfigurationTests.class,
+		org.springframework.cloud.gateway.discovery.ReactiveGatewayDiscoveryClientAutoConfigurationTests.class,
 		org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitionLocatorIntegrationTests.class,
 		org.springframework.cloud.gateway.support.ShortcutConfigurableTests.class,
 		org.springframework.cloud.gateway.support.ipresolver.XForwardedRemoteAddressResolverTest.class,
@@ -121,8 +127,7 @@ import static org.junit.Assume.assumeThat;
 		org.springframework.cloud.gateway.test.WebfluxNotIncludedTests.class,
 		org.springframework.cloud.gateway.test.HttpStatusTests.class,
 		org.springframework.cloud.gateway.test.GatewayIntegrationTests.class,
-		org.springframework.cloud.gateway.test.sse.SseIntegrationTests.class,
-})
+		org.springframework.cloud.gateway.test.sse.SseIntegrationTests.class })
 public class AdhocTestSuite {
 
 	@ClassRule
@@ -132,11 +137,12 @@ public class AdhocTestSuite {
 
 		@Override
 		public Statement apply(Statement base, Description description) {
-			assumeThat("Adhoc Tests ignored",
-					System.getenv("GATEWAY_ADHOC_ENABLED"),
+			assumeThat("Adhoc Tests ignored", System.getenv("GATEWAY_ADHOC_ENABLED"),
 					is(equalTo("true")));
 
 			return base;
 		}
+
 	}
+
 }

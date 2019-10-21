@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.gateway.filter.ratelimit;
 
 import java.util.UUID;
@@ -5,6 +21,7 @@ import java.util.UUID;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -23,8 +40,11 @@ import static org.junit.Assume.assumeThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 /**
- * see https://gist.github.com/ptarjan/e38f45f2dfe601419ca3af937fff574d#file-1-check_request_rate_limiter-rb-L36-L62
+ * see
+ * https://gist.github.com/ptarjan/e38f45f2dfe601419ca3af937fff574d#file-1-check_request_rate_limiter-rb-L36-L62
+ *
  * @author Spencer Gibb
+ * @author Ronny Bräunlich
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -39,8 +59,7 @@ public class RedisRateLimiterTests extends BaseWebClientTests {
 
 	@Test
 	public void redisRateLimiterWorks() throws Exception {
-		assumeThat("Ignore on Circle",
-				System.getenv("CIRCLECI"), is(nullValue()));
+		assumeThat("Ignore on Circle", System.getenv("CIRCLECI"), is(nullValue()));
 
 		String id = UUID.randomUUID().toString();
 
@@ -49,42 +68,66 @@ public class RedisRateLimiterTests extends BaseWebClientTests {
 
 		String routeId = "myroute";
 		rateLimiter.getConfig().put(routeId, new RedisRateLimiter.Config()
-				.setBurstCapacity(burstCapacity)
-				.setReplenishRate(replenishRate));
+				.setBurstCapacity(burstCapacity).setReplenishRate(replenishRate));
 
 		// Bursts work
 		for (int i = 0; i < burstCapacity; i++) {
 			Response response = rateLimiter.isAllowed(routeId, id).block();
 			assertThat(response.isAllowed()).as("Burst # %s is allowed", i).isTrue();
-			assertThat(response.getHeaders()).containsKey(RedisRateLimiter.REMAINING_HEADER);
-			assertThat(response.getHeaders()).
-					containsEntry(RedisRateLimiter.REPLENISH_RATE_HEADER, String.valueOf(replenishRate));
-			assertThat(response.getHeaders()).
-					containsEntry(RedisRateLimiter.BURST_CAPACITY_HEADER, String.valueOf(burstCapacity));
+			assertThat(response.getHeaders())
+					.containsKey(RedisRateLimiter.REMAINING_HEADER);
+			assertThat(response.getHeaders()).containsEntry(
+					RedisRateLimiter.REPLENISH_RATE_HEADER,
+					String.valueOf(replenishRate));
+			assertThat(response.getHeaders()).containsEntry(
+					RedisRateLimiter.BURST_CAPACITY_HEADER,
+					String.valueOf(burstCapacity));
 		}
 
 		Response response = rateLimiter.isAllowed(routeId, id).block();
-		if (response.isAllowed()) { //TODO: sometimes there is an off by one error
+		if (response.isAllowed()) { // TODO: sometimes there is an off by one error
 			response = rateLimiter.isAllowed(routeId, id).block();
 		}
-		assertThat(response.isAllowed()).as("Burst # %s is not allowed", burstCapacity).isFalse();
+		assertThat(response.isAllowed()).as("Burst # %s is not allowed", burstCapacity)
+				.isFalse();
 
 		Thread.sleep(1000);
 
-        // # After the burst is done, check the steady state
+		// # After the burst is done, check the steady state
 		for (int i = 0; i < replenishRate; i++) {
 			response = rateLimiter.isAllowed(routeId, id).block();
-			assertThat(response.isAllowed()).as("steady state # %s is allowed", i).isTrue();
+			assertThat(response.isAllowed()).as("steady state # %s is allowed", i)
+					.isTrue();
 		}
 
 		response = rateLimiter.isAllowed(routeId, id).block();
-		assertThat(response.isAllowed()).as("steady state # %s is allowed", replenishRate).isFalse();
+		assertThat(response.isAllowed()).as("steady state # %s is allowed", replenishRate)
+				.isFalse();
 	}
-	
+
 	@Test
 	public void keysUseRedisKeyHashTags() {
-		assertThat(RedisRateLimiter.getKeys("1"))
-				.containsExactly("request_rate_limiter.{1}.tokens", "request_rate_limiter.{1}.timestamp");
+		assertThat(RedisRateLimiter.getKeys("1")).containsExactly(
+				"request_rate_limiter.{1}.tokens", "request_rate_limiter.{1}.timestamp");
+	}
+
+	@Test
+	public void redisRateLimiterDoesNotSendHeadersIfDeactivated() throws Exception {
+		assumeThat("Ignore on Circle", System.getenv("CIRCLECI"), is(nullValue()));
+
+		String id = UUID.randomUUID().toString();
+		String routeId = "myroute";
+
+		rateLimiter.setIncludeHeaders(false);
+
+		Response response = rateLimiter.isAllowed(routeId, id).block();
+		assertThat(response.isAllowed()).isTrue();
+		assertThat(response.getHeaders())
+				.doesNotContainKey(RedisRateLimiter.REMAINING_HEADER);
+		assertThat(response.getHeaders())
+				.doesNotContainKey(RedisRateLimiter.REPLENISH_RATE_HEADER);
+		assertThat(response.getHeaders())
+				.doesNotContainKey(RedisRateLimiter.BURST_CAPACITY_HEADER);
 	}
 
 	@EnableAutoConfiguration
@@ -93,4 +136,5 @@ public class RedisRateLimiterTests extends BaseWebClientTests {
 	public static class TestConfig {
 
 	}
+
 }

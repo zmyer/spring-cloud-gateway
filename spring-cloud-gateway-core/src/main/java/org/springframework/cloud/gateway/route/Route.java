@@ -1,18 +1,17 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.gateway.route;
@@ -22,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -39,7 +40,6 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.t
 /**
  * @author Spencer Gibb
  */
-// TODO: 2019/01/24 by zmyer
 public class Route implements Ordered {
 
 	private final String id;
@@ -52,15 +52,37 @@ public class Route implements Ordered {
 
 	private final List<GatewayFilter> gatewayFilters;
 
+	private final Map<String, Object> metadata;
+
+	@Deprecated
+	private Route(String id, URI uri, int order,
+			AsyncPredicate<ServerWebExchange> predicate,
+			List<GatewayFilter> gatewayFilters) {
+		this(id, uri, order, predicate, gatewayFilters, new HashMap<>());
+	}
+
+	private Route(String id, URI uri, int order,
+			AsyncPredicate<ServerWebExchange> predicate,
+			List<GatewayFilter> gatewayFilters, Map<String, Object> metadata) {
+		this.id = id;
+		this.uri = uri;
+		this.order = order;
+		this.predicate = predicate;
+		this.gatewayFilters = gatewayFilters;
+		this.metadata = metadata;
+	}
+
 	public static Builder builder() {
 		return new Builder();
 	}
 
 	public static Builder builder(RouteDefinition routeDefinition) {
-		return new Builder()
-				.id(routeDefinition.getId())
+		// @formatter:off
+		return new Builder().id(routeDefinition.getId())
 				.uri(routeDefinition.getUri())
-				.order(routeDefinition.getOrder());
+				.order(routeDefinition.getOrder())
+				.metadata(routeDefinition.getMetadata());
+		// @formatter:on
 	}
 
 	public static AsyncBuilder async() {
@@ -68,22 +90,75 @@ public class Route implements Ordered {
 	}
 
 	public static AsyncBuilder async(RouteDefinition routeDefinition) {
-		return new AsyncBuilder()
-				.id(routeDefinition.getId())
+		// @formatter:off
+		return new AsyncBuilder().id(routeDefinition.getId())
 				.uri(routeDefinition.getUri())
-				.order(routeDefinition.getOrder());
+				.order(routeDefinition.getOrder())
+				.metadata(routeDefinition.getMetadata());
+		// @formatter:on
 	}
 
-	private Route(String id, URI uri, int order, AsyncPredicate<ServerWebExchange> predicate,
-				  List<GatewayFilter> gatewayFilters) {
-		this.id = id;
-		this.uri = uri;
-		this.order = order;
-		this.predicate = predicate;
-		this.gatewayFilters = gatewayFilters;
+	public String getId() {
+		return this.id;
+	}
+
+	public URI getUri() {
+		return this.uri;
+	}
+
+	public int getOrder() {
+		return order;
+	}
+
+	public AsyncPredicate<ServerWebExchange> getPredicate() {
+		return this.predicate;
+	}
+
+	public List<GatewayFilter> getFilters() {
+		return Collections.unmodifiableList(this.gatewayFilters);
+	}
+
+	public Map<String, Object> getMetadata() {
+		return Collections.unmodifiableMap(metadata);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Route route = (Route) o;
+		return this.order == route.order && Objects.equals(this.id, route.id)
+				&& Objects.equals(this.uri, route.uri)
+				&& Objects.equals(this.predicate, route.predicate)
+				&& Objects.equals(this.gatewayFilters, route.gatewayFilters)
+				&& Objects.equals(this.metadata, route.metadata);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(this.id, this.uri, this.order, this.predicate,
+				this.gatewayFilters, this.metadata);
+	}
+
+	@Override
+	public String toString() {
+		final StringBuffer sb = new StringBuffer("Route{");
+		sb.append("id='").append(id).append('\'');
+		sb.append(", uri=").append(uri);
+		sb.append(", order=").append(order);
+		sb.append(", predicate=").append(predicate);
+		sb.append(", gatewayFilters=").append(gatewayFilters);
+		sb.append(", metadata=").append(metadata);
+		sb.append('}');
+		return sb.toString();
 	}
 
 	public abstract static class AbstractBuilder<B extends AbstractBuilder<B>> {
+
 		protected String id;
 
 		protected URI uri;
@@ -91,6 +166,8 @@ public class Route implements Ordered {
 		protected int order = 0;
 
 		protected List<GatewayFilter> gatewayFilters = new ArrayList<>();
+
+		protected Map<String, Object> metadata = new HashMap<>();
 
 		protected AbstractBuilder() {
 		}
@@ -118,21 +195,33 @@ public class Route implements Ordered {
 		public B uri(URI uri) {
 			this.uri = uri;
 			String scheme = this.uri.getScheme();
-			Assert.hasText(scheme, "The parameter [" + this.uri + "] " +
-					"format is incorrect, scheme can not be empty");
+			Assert.hasText(scheme, "The parameter [" + this.uri
+					+ "] format is incorrect, scheme can not be empty");
 			if (this.uri.getPort() < 0 && scheme.startsWith("http")) {
 				// default known http ports
 				int port = this.uri.getScheme().equals("https") ? 443 : 80;
-				this.uri = UriComponentsBuilder.fromUri(this.uri)
-						.port(port)
-						.build(false)
+				this.uri = UriComponentsBuilder.fromUri(this.uri).port(port).build(false)
 						.toUri();
 			}
 			return getThis();
 		}
 
-		public abstract AsyncPredicate<ServerWebExchange> getPredicate();
+		public B replaceMetadata(Map<String, Object> metadata) {
+			this.metadata = metadata;
+			return getThis();
+		}
 
+		public B metadata(Map<String, Object> metadata) {
+			this.metadata.putAll(metadata);
+			return getThis();
+		}
+
+		public B metadata(String key, Object value) {
+			this.metadata.put(key, value);
+			return getThis();
+		}
+
+		public abstract AsyncPredicate<ServerWebExchange> getPredicate();
 
 		public B replaceFilters(List<GatewayFilter> gatewayFilters) {
 			this.gatewayFilters = gatewayFilters;
@@ -159,11 +248,12 @@ public class Route implements Ordered {
 			AsyncPredicate<ServerWebExchange> predicate = getPredicate();
 			Assert.notNull(predicate, "predicate can not be null");
 
-			return new Route(this.id, this.uri, this.order, predicate, this.gatewayFilters);
+			return new Route(this.id, this.uri, this.order, predicate,
+					this.gatewayFilters, this.metadata);
 		}
+
 	}
 
-	// TODO: 2019/01/25 by zmyer
 	public static class AsyncBuilder extends AbstractBuilder<AsyncBuilder> {
 
 		protected AsyncPredicate<ServerWebExchange> predicate;
@@ -204,9 +294,11 @@ public class Route implements Ordered {
 			this.predicate = this.predicate.negate();
 			return this;
 		}
+
 	}
 
 	public static class Builder extends AbstractBuilder<Builder> {
+
 		protected Predicate<ServerWebExchange> predicate;
 
 		@Override
@@ -239,52 +331,4 @@ public class Route implements Ordered {
 
 	}
 
-	public String getId() {
-		return this.id;
-	}
-
-	public URI getUri() {
-		return this.uri;
-	}
-
-	public int getOrder() {
-		return order;
-	}
-
-	public AsyncPredicate<ServerWebExchange> getPredicate() {
-		return this.predicate;
-	}
-
-	public List<GatewayFilter> getFilters() {
-		return Collections.unmodifiableList(this.gatewayFilters);
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		Route route = (Route) o;
-		return Objects.equals(id, route.id) &&
-				Objects.equals(uri, route.uri) &&
-				Objects.equals(order, route.order) &&
-				Objects.equals(predicate, route.predicate) &&
-				Objects.equals(gatewayFilters, route.gatewayFilters);
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(id, uri, predicate, gatewayFilters);
-	}
-
-	@Override
-	public String toString() {
-		final StringBuffer sb = new StringBuffer("Route{");
-		sb.append("id='").append(id).append('\'');
-		sb.append(", uri=").append(uri);
-		sb.append(", order=").append(order);
-		sb.append(", predicate=").append(predicate);
-		sb.append(", gatewayFilters=").append(gatewayFilters);
-		sb.append('}');
-		return sb.toString();
-	}
 }

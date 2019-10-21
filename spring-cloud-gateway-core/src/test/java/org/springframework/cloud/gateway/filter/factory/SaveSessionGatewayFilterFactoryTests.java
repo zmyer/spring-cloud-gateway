@@ -1,11 +1,11 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.gateway.filter.factory;
 
 import java.time.Duration;
@@ -21,9 +22,13 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.test.BaseWebClientTests;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -32,9 +37,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.server.WebSession;
 import org.springframework.web.server.session.WebSessionManager;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,17 +62,20 @@ public class SaveSessionGatewayFilterFactoryTests extends BaseWebClientTests {
 		when(mockWebSession.getAttributes()).thenReturn(new HashMap<>());
 		when(mockWebSession.save()).thenReturn(Mono.empty());
 
-		Mono<Map> result = webClient.get()
-			.uri("/get")
-			.exchange()
-			.flatMap(response -> response.body(toMono(Map.class)));
+		Mono<Map> result = webClient.get().uri("/get").exchange()
+				.flatMap(response -> response.body(toMono(Map.class)));
 
-		StepVerifier.create(result)
-			.consumeNextWith(response -> {/* Don't care about data, just need to catch signal */})
-			.expectComplete()
-			.verify(Duration.ofMinutes(10));
+		StepVerifier.create(result).consumeNextWith(response -> {
+			// Don't care about data, just need to catch signal
+		}).expectComplete().verify(Duration.ofMinutes(10));
 
 		verify(mockWebSession).save();
+	}
+
+	@Test
+	public void toStringFormat() {
+		GatewayFilter filter = new SaveSessionGatewayFilterFactory().apply("");
+		assertThat(filter.toString()).contains("SaveSession");
 	}
 
 	@EnableAutoConfiguration
@@ -80,6 +87,7 @@ public class SaveSessionGatewayFilterFactoryTests extends BaseWebClientTests {
 		WebSessionManager webSessionManager() {
 			return exchange -> Mono.just(mockWebSession);
 		}
+
 	}
 
 }

@@ -1,18 +1,17 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.gateway.filter.factory.rewrite;
@@ -27,218 +26,212 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.NettyWriteResponseFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.cloud.gateway.filter.factory.GatewayFilterFactory;
 import org.springframework.cloud.gateway.support.BodyInserterContext;
-import org.springframework.cloud.gateway.support.CachedBodyOutputMessage;
-import org.springframework.cloud.gateway.support.DefaultClientResponse;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.client.reactive.ClientHttpResponse;
 import org.springframework.http.codec.ServerCodecConfigurer;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.server.ServerWebExchange;
 
+import static org.springframework.cloud.gateway.support.GatewayToStringStyler.filterToStringCreator;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR;
 
 /**
- * This filter is BETA and may be subject to change in a future release.
+ * GatewayFilter that modifies the respons body.
  */
-// TODO: 2019/01/24 by zmyer
-public class ModifyResponseBodyGatewayFilterFactory
-        extends AbstractGatewayFilterFactory<ModifyResponseBodyGatewayFilterFactory.Config> {
+public class ModifyResponseBodyGatewayFilterFactory extends
+		AbstractGatewayFilterFactory<ModifyResponseBodyGatewayFilterFactory.Config> {
 
-    private final ServerCodecConfigurer codecConfigurer;
+	public ModifyResponseBodyGatewayFilterFactory() {
+		super(Config.class);
+	}
 
-    public ModifyResponseBodyGatewayFilterFactory(ServerCodecConfigurer codecConfigurer) {
-        super(Config.class);
-        this.codecConfigurer = codecConfigurer;
-    }
+	@Deprecated
+	public ModifyResponseBodyGatewayFilterFactory(ServerCodecConfigurer codecConfigurer) {
+		this();
+	}
 
-    @Override
-    public GatewayFilter apply(Config config) {
-        return new ModifyResponseGatewayFilter(config);
-    }
+	@Override
+	public GatewayFilter apply(Config config) {
+		ModifyResponseGatewayFilter gatewayFilter = new ModifyResponseGatewayFilter(
+				config);
+		gatewayFilter.setFactory(this);
+		return gatewayFilter;
+	}
 
-    // TODO: 2019/01/24 by zmyer
-    public class ModifyResponseGatewayFilter implements GatewayFilter, Ordered {
-        private final Config config;
+	public static class Config {
 
-        public ModifyResponseGatewayFilter(Config config) {
-            this.config = config;
-        }
+		private Class inClass;
 
-        @Override
-        @SuppressWarnings("unchecked")
-        public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		private Class outClass;
 
-            ServerHttpResponseDecorator responseDecorator = new ServerHttpResponseDecorator(exchange.getResponse()) {
+		private Map<String, Object> inHints;
 
-                @Override
-                public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
+		private Map<String, Object> outHints;
 
-                    Class inClass = config.getInClass();
-                    Class outClass = config.getOutClass();
+		private String newContentType;
 
-                    String originalResponseContentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-                    HttpHeaders httpHeaders = new HttpHeaders();
-                    //explicitly add it in this way instead of 'httpHeaders.setContentType(originalResponseContentType)'
-                    //this will prevent exception in case of using non-standard media types like "Content-Type: image"
-                    httpHeaders.add(HttpHeaders.CONTENT_TYPE, originalResponseContentType);
-                    ResponseAdapter responseAdapter = new ResponseAdapter(body, httpHeaders);
-                    DefaultClientResponse clientResponse = new DefaultClientResponse(responseAdapter,
-                            ExchangeStrategies.withDefaults());
+		private RewriteFunction rewriteFunction;
 
-                    //TODO: flux or mono
-                    Mono modifiedBody = clientResponse.bodyToMono(inClass)
-                            .flatMap(originalBody -> config.rewriteFunction.apply(exchange, originalBody));
+		public Class getInClass() {
+			return inClass;
+		}
 
-                    BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody, outClass);
-                    CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, exchange.getResponse().getHeaders());
-                    return bodyInserter.insert(outputMessage, new BodyInserterContext())
-                            .then(Mono.defer(() -> {
-                                Flux<DataBuffer> messageBody = outputMessage.getBody();
-                                HttpHeaders headers = getDelegate().getHeaders();
-                                if (!headers.containsKey(HttpHeaders.TRANSFER_ENCODING)) {
-                                    messageBody = messageBody.doOnNext(data -> headers.setContentLength(data.readableByteCount()));
-                                }
-                                //TODO: use isStreamingMediaType?
-                                return getDelegate().writeWith(messageBody);
-                            }));
-                }
+		public Config setInClass(Class inClass) {
+			this.inClass = inClass;
+			return this;
+		}
 
-                @Override
-                public Mono<Void> writeAndFlushWith(Publisher<? extends Publisher<? extends DataBuffer>> body) {
-                    return writeWith(Flux.from(body).flatMapSequential(p -> p));
-                }
-            };
+		public Class getOutClass() {
+			return outClass;
+		}
 
-            return chain.filter(exchange.mutate().response(responseDecorator).build());
-        }
+		public Config setOutClass(Class outClass) {
+			this.outClass = outClass;
+			return this;
+		}
 
-        @Override
-        public int getOrder() {
-            return NettyWriteResponseFilter.WRITE_RESPONSE_FILTER_ORDER - 1;
-        }
+		public Map<String, Object> getInHints() {
+			return inHints;
+		}
 
-    }
+		public Config setInHints(Map<String, Object> inHints) {
+			this.inHints = inHints;
+			return this;
+		}
 
-    // TODO: 2019/01/24 by zmyer
-    public class ResponseAdapter implements ClientHttpResponse {
+		public Map<String, Object> getOutHints() {
+			return outHints;
+		}
 
-        private final Flux<DataBuffer> flux;
-        private final HttpHeaders headers;
+		public Config setOutHints(Map<String, Object> outHints) {
+			this.outHints = outHints;
+			return this;
+		}
 
-        public ResponseAdapter(Publisher<? extends DataBuffer> body, HttpHeaders headers) {
-            this.headers = headers;
-            if (body instanceof Flux) {
-                flux = (Flux) body;
-            } else {
-                flux = ((Mono) body).flux();
-            }
-        }
+		public String getNewContentType() {
+			return newContentType;
+		}
 
-        @Override
-        public Flux<DataBuffer> getBody() {
-            return flux;
-        }
+		public Config setNewContentType(String newContentType) {
+			this.newContentType = newContentType;
+			return this;
+		}
 
-        @Override
-        public HttpHeaders getHeaders() {
-            return headers;
-        }
+		public RewriteFunction getRewriteFunction() {
+			return rewriteFunction;
+		}
 
-        @Override
-        public HttpStatus getStatusCode() {
-            return null;
-        }
+		public Config setRewriteFunction(RewriteFunction rewriteFunction) {
+			this.rewriteFunction = rewriteFunction;
+			return this;
+		}
 
-        @Override
-        public int getRawStatusCode() {
-            return 0;
-        }
+		public <T, R> Config setRewriteFunction(Class<T> inClass, Class<R> outClass,
+				RewriteFunction<T, R> rewriteFunction) {
+			setInClass(inClass);
+			setOutClass(outClass);
+			setRewriteFunction(rewriteFunction);
+			return this;
+		}
 
-        @Override
-        public MultiValueMap<String, ResponseCookie> getCookies() {
-            return null;
-        }
-    }
+	}
 
-    // TODO: 2019/01/24 by zmyer
-    public static class Config {
-        private Class inClass;
-        private Class outClass;
-        private Map<String, Object> inHints;
-        private Map<String, Object> outHints;
-        private String newContentType;
+	public class ModifyResponseGatewayFilter implements GatewayFilter, Ordered {
 
-        private RewriteFunction rewriteFunction;
+		private final Config config;
 
-        public Class getInClass() {
-            return inClass;
-        }
+		private GatewayFilterFactory<Config> gatewayFilterFactory;
 
-        public Config setInClass(Class inClass) {
-            this.inClass = inClass;
-            return this;
-        }
+		public ModifyResponseGatewayFilter(Config config) {
+			this.config = config;
+		}
 
-        public Class getOutClass() {
-            return outClass;
-        }
+		@Override
+		public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+			return chain.filter(exchange.mutate().response(decorate(exchange)).build());
+		}
 
-        public Config setOutClass(Class outClass) {
-            this.outClass = outClass;
-            return this;
-        }
+		@SuppressWarnings("unchecked")
+		ServerHttpResponse decorate(ServerWebExchange exchange) {
+			return new ServerHttpResponseDecorator(exchange.getResponse()) {
 
-        public Map<String, Object> getInHints() {
-            return inHints;
-        }
+				@Override
+				public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
 
-        public Config setInHints(Map<String, Object> inHints) {
-            this.inHints = inHints;
-            return this;
-        }
+					Class inClass = config.getInClass();
+					Class outClass = config.getOutClass();
 
-        public Map<String, Object> getOutHints() {
-            return outHints;
-        }
+					String originalResponseContentType = exchange
+							.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+					HttpHeaders httpHeaders = new HttpHeaders();
+					// explicitly add it in this way instead of
+					// 'httpHeaders.setContentType(originalResponseContentType)'
+					// this will prevent exception in case of using non-standard media
+					// types like "Content-Type: image"
+					httpHeaders.add(HttpHeaders.CONTENT_TYPE,
+							originalResponseContentType);
 
-        public Config setOutHints(Map<String, Object> outHints) {
-            this.outHints = outHints;
-            return this;
-        }
+					ClientResponse clientResponse = ClientResponse
+							.create(exchange.getResponse().getStatusCode())
+							.headers(headers -> headers.putAll(httpHeaders))
+							.body(Flux.from(body)).build();
 
-        public String getNewContentType() {
-            return newContentType;
-        }
+					// TODO: flux or mono
+					Mono modifiedBody = clientResponse.bodyToMono(inClass)
+							.flatMap(originalBody -> config.rewriteFunction
+									.apply(exchange, originalBody));
 
-        public Config setNewContentType(String newContentType) {
-            this.newContentType = newContentType;
-            return this;
-        }
+					BodyInserter bodyInserter = BodyInserters.fromPublisher(modifiedBody,
+							outClass);
+					CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(
+							exchange, exchange.getResponse().getHeaders());
+					return bodyInserter.insert(outputMessage, new BodyInserterContext())
+							.then(Mono.defer(() -> {
+								Flux<DataBuffer> messageBody = outputMessage.getBody();
+								HttpHeaders headers = getDelegate().getHeaders();
+								if (!headers.containsKey(HttpHeaders.TRANSFER_ENCODING)) {
+									messageBody = messageBody.doOnNext(data -> headers
+											.setContentLength(data.readableByteCount()));
+								}
+								// TODO: fail if isStreamingMediaType?
+								return getDelegate().writeWith(messageBody);
+							}));
+				}
 
-        public RewriteFunction getRewriteFunction() {
-            return rewriteFunction;
-        }
+				@Override
+				public Mono<Void> writeAndFlushWith(
+						Publisher<? extends Publisher<? extends DataBuffer>> body) {
+					return writeWith(Flux.from(body).flatMapSequential(p -> p));
+				}
+			};
+		}
 
-        public <T, R> Config setRewriteFunction(Class<T> inClass, Class<R> outClass,
-                                                RewriteFunction<T, R> rewriteFunction) {
-            setInClass(inClass);
-            setOutClass(outClass);
-            setRewriteFunction(rewriteFunction);
-            return this;
-        }
+		@Override
+		public int getOrder() {
+			return NettyWriteResponseFilter.WRITE_RESPONSE_FILTER_ORDER - 1;
+		}
 
-        public Config setRewriteFunction(RewriteFunction rewriteFunction) {
-            this.rewriteFunction = rewriteFunction;
-            return this;
-        }
-    }
+		@Override
+		public String toString() {
+			Object obj = (this.gatewayFilterFactory != null) ? this.gatewayFilterFactory
+					: this;
+			return filterToStringCreator(obj)
+					.append("New content type", config.getNewContentType())
+					.append("In class", config.getInClass())
+					.append("Out class", config.getOutClass()).toString();
+		}
+
+		public void setFactory(GatewayFilterFactory<Config> gatewayFilterFactory) {
+			this.gatewayFilterFactory = gatewayFilterFactory;
+		}
+
+	}
+
 }
